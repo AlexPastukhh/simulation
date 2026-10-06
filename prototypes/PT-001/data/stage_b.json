@@ -1,0 +1,1587 @@
+{
+  "prototypeId": "PT-001",
+  "stage": "B",
+  "status": "prepared",
+  "canonicalPlan": "architecture_simulator_proposal_composition_v3a_candidate_r4.md",
+  "scenarioId": "SCN-001",
+  "schemaNotes": {
+    "scenarioEventsAreSharedAnchors": true,
+    "branchEventsAreInheritedFromParentBranches": true,
+    "relationsDoNotImplyMutation": true,
+    "mutationsAreAuthoritativeForBranchArchitectureState": true,
+    "implementationOperationsAreExpandableDetailNotTopLevelTimelineByDefault": true
+  },
+  "branches": [
+    {
+      "id": "BR-ROOT",
+      "parentId": null,
+      "decisions": {}
+    },
+    {
+      "id": "BR-C-K",
+      "parentId": "BR-ROOT",
+      "decisions": {
+        "cancellation": "keep_local"
+      }
+    },
+    {
+      "id": "BR-C-P",
+      "parentId": "BR-ROOT",
+      "decisions": {
+        "cancellation": "centralize_policy"
+      }
+    },
+    {
+      "id": "BR-KK",
+      "parentId": "BR-C-K",
+      "decisions": {
+        "payment": "keep_direct"
+      }
+    },
+    {
+      "id": "BR-KP",
+      "parentId": "BR-C-K",
+      "decisions": {
+        "payment": "introduce_port"
+      }
+    },
+    {
+      "id": "BR-PK",
+      "parentId": "BR-C-P",
+      "decisions": {
+        "payment": "keep_direct"
+      }
+    },
+    {
+      "id": "BR-PP",
+      "parentId": "BR-C-P",
+      "decisions": {
+        "payment": "introduce_port"
+      }
+    }
+  ],
+  "scenarioEvents": [
+    {
+      "id": "SEVT-01",
+      "order": 1,
+      "role": "stimulus",
+      "category": "requirement",
+      "title": "Add VIP cancellation rule"
+    },
+    {
+      "id": "SEVT-02",
+      "order": 2,
+      "role": "stimulus",
+      "category": "requirement",
+      "title": "ChangeBookingDates must obey cancellation policy"
+    },
+    {
+      "id": "SEVT-03",
+      "order": 3,
+      "role": "stimulus",
+      "category": "requirement",
+      "title": "Admin cancellation must obey the same policy"
+    },
+    {
+      "id": "SEVT-04",
+      "order": 4,
+      "role": "information",
+      "category": "external_system",
+      "title": "Second payment provider signal revealed"
+    },
+    {
+      "id": "SEVT-05",
+      "order": 5,
+      "role": "stimulus",
+      "category": "requirement",
+      "title": "Support a second payment provider"
+    },
+    {
+      "id": "SEVT-06",
+      "order": 6,
+      "role": "state_change",
+      "category": "organization",
+      "title": "Billing ownership moves to BillingTeam"
+    },
+    {
+      "id": "SEVT-07",
+      "order": 7,
+      "role": "stimulus",
+      "category": "requirement",
+      "title": "Add billing retry workflow"
+    },
+    {
+      "id": "SEVT-08",
+      "order": 8,
+      "role": "stimulus",
+      "category": "requirement",
+      "title": "VIP cancellation window changes to 24h"
+    }
+  ],
+  "semanticEntities": [
+    {
+      "id": "SEM-1",
+      "name": "Booking"
+    },
+    {
+      "id": "SEM-2",
+      "name": "CancellationPolicy"
+    },
+    {
+      "id": "SEM-3",
+      "name": "PaymentProcessing"
+    },
+    {
+      "id": "SEM-4",
+      "name": "Payment"
+    },
+    {
+      "id": "SEM-5",
+      "name": "SellerReporting"
+    },
+    {
+      "id": "SEM-6",
+      "name": "BillingRetryPolicy"
+    }
+  ],
+  "branchEvents": [
+    {
+      "id": "BE-R-01",
+      "branchScope": "BR-ROOT",
+      "triggeredBy": [
+        "SEVT-01"
+      ],
+      "provenance": "branch_generated",
+      "role": "activity",
+      "category": "analysis",
+      "title": "Inspect current cancellation implementation",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "inspects"
+        },
+        {
+          "representationKey": "CANCEL_HANDLER",
+          "type": "inspects"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-R-02",
+      "branchScope": "BR-ROOT",
+      "triggeredBy": [
+        "SEVT-01"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Implement VIP rule in CancelBookingHandler",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "CANCEL_HANDLER",
+          "mutationType": "modify",
+          "delta": "add VIP >= 12h rule"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-R-01",
+          "type": "modify_rule_implementation",
+          "target": "CANCEL_HANDLER"
+        }
+      ],
+      "sequenceWithinTrigger": 2
+    },
+    {
+      "id": "BE-R-03",
+      "branchScope": "BR-ROOT",
+      "triggeredBy": [
+        "SEVT-01"
+      ],
+      "provenance": "branch_generated",
+      "role": "activity",
+      "category": "test",
+      "title": "Add VIP cancellation tests",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "verifies"
+        }
+      ],
+      "mutations": [],
+      "operations": [
+        {
+          "id": "OP-R-02",
+          "type": "add_test_obligation",
+          "target": "CANCEL_HANDLER_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 3
+    },
+    {
+      "id": "BE-CK-01",
+      "branchScope": "BR-C-K",
+      "triggeredBy": [
+        "SEVT-02"
+      ],
+      "provenance": "user_decision",
+      "role": "decision",
+      "category": "architecture",
+      "title": "KEEP local cancellation rule placement",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "decision_about"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-CK-02",
+      "branchScope": "BR-C-K",
+      "triggeredBy": [
+        "SEVT-02"
+      ],
+      "provenance": "branch_generated",
+      "role": "activity",
+      "category": "analysis",
+      "title": "Inspect CancelBooking and ChangeBookingDates paths",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "inspects"
+        },
+        {
+          "representationKey": "CANCEL_HANDLER",
+          "type": "inspects"
+        },
+        {
+          "representationKey": "CHANGE_DATES_HANDLER",
+          "type": "inspects"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 2
+    },
+    {
+      "id": "BE-CK-03",
+      "branchScope": "BR-C-K",
+      "triggeredBy": [
+        "SEVT-02"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Add cancellation rule to ChangeBookingDatesHandler",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "CHANGE_DATES_HANDLER",
+          "mutationType": "modify",
+          "delta": "embed cancellation rule"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-CK-01",
+          "type": "modify_rule_implementation",
+          "target": "CHANGE_DATES_HANDLER"
+        },
+        {
+          "id": "OP-CK-02",
+          "type": "add_test_obligation",
+          "target": "CHANGE_DATES_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 3
+    },
+    {
+      "id": "BE-CP-01",
+      "branchScope": "BR-C-P",
+      "triggeredBy": [
+        "SEVT-02"
+      ],
+      "provenance": "user_decision",
+      "role": "decision",
+      "category": "architecture",
+      "title": "Centralize CancellationPolicy",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "decision_about"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-CP-02",
+      "branchScope": "BR-C-P",
+      "triggeredBy": [
+        "SEVT-02"
+      ],
+      "provenance": "branch_generated",
+      "role": "activity",
+      "category": "analysis",
+      "title": "Analyze shared cancellation rule boundary",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "inspects"
+        },
+        {
+          "representationKey": "CANCEL_HANDLER",
+          "type": "inspects"
+        },
+        {
+          "representationKey": "CHANGE_DATES_HANDLER",
+          "type": "inspects"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 2
+    },
+    {
+      "id": "BE-CP-03",
+      "branchScope": "BR-C-P",
+      "triggeredBy": [
+        "SEVT-02"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "migration",
+      "title": "Create authoritative CancellationPolicy and move rule",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "implements_authoritatively"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "CANCELLATION_POLICY",
+          "mutationType": "create",
+          "delta": "authoritative representation for SEM-2"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "CANCEL_HANDLER",
+          "mutationType": "modify",
+          "delta": "remove authoritative rule; consume CancellationPolicy"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "CHANGE_DATES_HANDLER",
+          "mutationType": "modify",
+          "delta": "consume CancellationPolicy"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-CP-01",
+          "type": "create_rule_component",
+          "target": "CANCELLATION_POLICY"
+        },
+        {
+          "id": "OP-CP-02",
+          "type": "move_rule_implementation",
+          "from": "CANCEL_HANDLER",
+          "to": "CANCELLATION_POLICY"
+        },
+        {
+          "id": "OP-CP-03",
+          "type": "wire_consumer",
+          "target": "CANCEL_HANDLER"
+        },
+        {
+          "id": "OP-CP-04",
+          "type": "wire_consumer",
+          "target": "CHANGE_DATES_HANDLER"
+        },
+        {
+          "id": "OP-CP-05",
+          "type": "add_test_obligation",
+          "target": "CANCELLATION_POLICY_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 3
+    },
+    {
+      "id": "BE-CK-04",
+      "branchScope": "BR-C-K",
+      "triggeredBy": [
+        "SEVT-03"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Add AdminCancelHandler with local cancellation rule",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "ADMIN_CANCEL_HANDLER",
+          "mutationType": "create",
+          "delta": "contains cancellation rule"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-CK-03",
+          "type": "create_handler",
+          "target": "ADMIN_CANCEL_HANDLER"
+        },
+        {
+          "id": "OP-CK-04",
+          "type": "duplicate_rule_implementation",
+          "source": "CANCEL_HANDLER",
+          "target": "ADMIN_CANCEL_HANDLER"
+        },
+        {
+          "id": "OP-CK-05",
+          "type": "add_test_obligation",
+          "target": "ADMIN_CANCEL_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-CP-04",
+      "branchScope": "BR-C-P",
+      "triggeredBy": [
+        "SEVT-03"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Add AdminCancelHandler consuming CancellationPolicy",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "consumes"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "ADMIN_CANCEL_HANDLER",
+          "mutationType": "create",
+          "delta": "consumer of CancellationPolicy"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-CP-06",
+          "type": "create_handler",
+          "target": "ADMIN_CANCEL_HANDLER"
+        },
+        {
+          "id": "OP-CP-07",
+          "type": "wire_consumer",
+          "target": "ADMIN_CANCEL_HANDLER"
+        },
+        {
+          "id": "OP-CP-08",
+          "type": "add_test_obligation",
+          "target": "ADMIN_CANCEL_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-KK-01",
+      "branchScope": "BR-KK",
+      "triggeredBy": [
+        "SEVT-04"
+      ],
+      "provenance": "user_decision",
+      "role": "decision",
+      "category": "architecture",
+      "title": "KEEP direct Stripe dependency after forecast",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "decision_about"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-PK-01",
+      "branchScope": "BR-PK",
+      "triggeredBy": [
+        "SEVT-04"
+      ],
+      "provenance": "user_decision",
+      "role": "decision",
+      "category": "architecture",
+      "title": "KEEP direct Stripe dependency after forecast",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "decision_about"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-KP-01",
+      "branchScope": "BR-KP",
+      "triggeredBy": [
+        "SEVT-04"
+      ],
+      "provenance": "user_decision",
+      "role": "decision",
+      "category": "architecture",
+      "title": "Introduce PaymentPort proactively",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "decision_about"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-KP-02",
+      "branchScope": "BR-KP",
+      "triggeredBy": [
+        "SEVT-04"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "migration",
+      "title": "Create PaymentPort and StripeAdapter",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "PAYMENT_PORT",
+          "mutationType": "create",
+          "delta": "provider dependency boundary"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "STRIPE_ADAPTER",
+          "mutationType": "create",
+          "delta": "Stripe implementation behind PaymentPort"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "DIRECT_STRIPE_CLIENT",
+          "mutationType": "replace",
+          "delta": "direct dependency replaced by PaymentPort + StripeAdapter"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-KP-01",
+          "type": "create_port",
+          "target": "PAYMENT_PORT"
+        },
+        {
+          "id": "OP-KP-02",
+          "type": "create_adapter",
+          "target": "STRIPE_ADAPTER"
+        },
+        {
+          "id": "OP-KP-03",
+          "type": "migrate_external_dependency",
+          "from": "DIRECT_STRIPE_CLIENT",
+          "to": "PAYMENT_PORT"
+        },
+        {
+          "id": "OP-KP-04",
+          "type": "add_test_obligation",
+          "target": "PAYMENT_PORT_CONTRACT_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 2
+    },
+    {
+      "id": "BE-PP-01",
+      "branchScope": "BR-PP",
+      "triggeredBy": [
+        "SEVT-04"
+      ],
+      "provenance": "user_decision",
+      "role": "decision",
+      "category": "architecture",
+      "title": "Introduce PaymentPort proactively",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "decision_about"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-PP-02",
+      "branchScope": "BR-PP",
+      "triggeredBy": [
+        "SEVT-04"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "migration",
+      "title": "Create PaymentPort and StripeAdapter",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "PAYMENT_PORT",
+          "mutationType": "create",
+          "delta": "provider dependency boundary"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "STRIPE_ADAPTER",
+          "mutationType": "create",
+          "delta": "Stripe implementation behind PaymentPort"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "DIRECT_STRIPE_CLIENT",
+          "mutationType": "replace",
+          "delta": "direct dependency replaced by PaymentPort + StripeAdapter"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-PP-01",
+          "type": "create_port",
+          "target": "PAYMENT_PORT"
+        },
+        {
+          "id": "OP-PP-02",
+          "type": "create_adapter",
+          "target": "STRIPE_ADAPTER"
+        },
+        {
+          "id": "OP-PP-03",
+          "type": "migrate_external_dependency",
+          "from": "DIRECT_STRIPE_CLIENT",
+          "to": "PAYMENT_PORT"
+        },
+        {
+          "id": "OP-PP-04",
+          "type": "add_test_obligation",
+          "target": "PAYMENT_PORT_CONTRACT_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 2
+    },
+    {
+      "id": "BE-KK-02",
+      "branchScope": "BR-KK",
+      "triggeredBy": [
+        "SEVT-05"
+      ],
+      "provenance": "branch_generated",
+      "role": "activity",
+      "category": "analysis",
+      "title": "Analyze Stripe-specific assumptions for second provider",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "inspects"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-KK-03",
+      "branchScope": "BR-KK",
+      "triggeredBy": [
+        "SEVT-05"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "migration",
+      "title": "Introduce PaymentPort reactively and add AdyenAdapter",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "PAYMENT_PORT",
+          "mutationType": "create",
+          "delta": "provider boundary"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "STRIPE_ADAPTER",
+          "mutationType": "create",
+          "delta": "Stripe adapter"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "ADYEN_ADAPTER",
+          "mutationType": "create",
+          "delta": "Adyen adapter"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "DIRECT_STRIPE_CLIENT",
+          "mutationType": "replace",
+          "delta": "replaced by port/adapters"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-KK-01",
+          "type": "create_port",
+          "target": "PAYMENT_PORT"
+        },
+        {
+          "id": "OP-KK-02",
+          "type": "create_adapter",
+          "target": "STRIPE_ADAPTER"
+        },
+        {
+          "id": "OP-KK-03",
+          "type": "create_adapter",
+          "target": "ADYEN_ADAPTER"
+        },
+        {
+          "id": "OP-KK-04",
+          "type": "migrate_external_dependency",
+          "from": "DIRECT_STRIPE_CLIENT",
+          "to": "PAYMENT_PORT"
+        },
+        {
+          "id": "OP-KK-05",
+          "type": "add_test_obligation",
+          "target": "PROVIDER_CONTRACT_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 2
+    },
+    {
+      "id": "BE-PK-02",
+      "branchScope": "BR-PK",
+      "triggeredBy": [
+        "SEVT-05"
+      ],
+      "provenance": "branch_generated",
+      "role": "activity",
+      "category": "analysis",
+      "title": "Analyze Stripe-specific assumptions for second provider",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "inspects"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-PK-03",
+      "branchScope": "BR-PK",
+      "triggeredBy": [
+        "SEVT-05"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "migration",
+      "title": "Introduce PaymentPort reactively and add AdyenAdapter",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "PAYMENT_PORT",
+          "mutationType": "create",
+          "delta": "provider boundary"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "STRIPE_ADAPTER",
+          "mutationType": "create",
+          "delta": "Stripe adapter"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "ADYEN_ADAPTER",
+          "mutationType": "create",
+          "delta": "Adyen adapter"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "DIRECT_STRIPE_CLIENT",
+          "mutationType": "replace",
+          "delta": "replaced by port/adapters"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-PK-01",
+          "type": "create_port",
+          "target": "PAYMENT_PORT"
+        },
+        {
+          "id": "OP-PK-02",
+          "type": "create_adapter",
+          "target": "STRIPE_ADAPTER"
+        },
+        {
+          "id": "OP-PK-03",
+          "type": "create_adapter",
+          "target": "ADYEN_ADAPTER"
+        },
+        {
+          "id": "OP-PK-04",
+          "type": "migrate_external_dependency",
+          "from": "DIRECT_STRIPE_CLIENT",
+          "to": "PAYMENT_PORT"
+        },
+        {
+          "id": "OP-PK-05",
+          "type": "add_test_obligation",
+          "target": "PROVIDER_CONTRACT_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 2
+    },
+    {
+      "id": "BE-KP-03",
+      "branchScope": "BR-KP",
+      "triggeredBy": [
+        "SEVT-05"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Add AdyenAdapter behind existing PaymentPort",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "ADYEN_ADAPTER",
+          "mutationType": "create",
+          "delta": "Adyen implementation behind existing port"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-KP-05",
+          "type": "create_adapter",
+          "target": "ADYEN_ADAPTER"
+        },
+        {
+          "id": "OP-KP-06",
+          "type": "add_provider_configuration",
+          "target": "PAYMENT_PROVIDER_ROUTING"
+        },
+        {
+          "id": "OP-KP-07",
+          "type": "add_test_obligation",
+          "target": "ADYEN_CONTRACT_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-PP-03",
+      "branchScope": "BR-PP",
+      "triggeredBy": [
+        "SEVT-05"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Add AdyenAdapter behind existing PaymentPort",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "ADYEN_ADAPTER",
+          "mutationType": "create",
+          "delta": "Adyen implementation behind existing port"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-PP-05",
+          "type": "create_adapter",
+          "target": "ADYEN_ADAPTER"
+        },
+        {
+          "id": "OP-PP-06",
+          "type": "add_provider_configuration",
+          "target": "PAYMENT_PROVIDER_ROUTING"
+        },
+        {
+          "id": "OP-PP-07",
+          "type": "add_test_obligation",
+          "target": "ADYEN_CONTRACT_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-KK-04",
+      "branchScope": "BR-KK",
+      "triggeredBy": [
+        "SEVT-07"
+      ],
+      "provenance": "branch_generated",
+      "role": "activity",
+      "category": "coordination",
+      "title": "Coordinate billing retry change across ProductTeam and BillingTeam",
+      "relations": [
+        {
+          "entityId": "SEM-6",
+          "type": "coordinates_about"
+        },
+        {
+          "organizationId": "ORG-1",
+          "type": "requires_coordination"
+        },
+        {
+          "organizationId": "ORG-3",
+          "type": "requires_coordination"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-KK-05",
+      "branchScope": "BR-KK",
+      "triggeredBy": [
+        "SEVT-07"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Implement billing retry policy in monolith",
+      "relations": [
+        {
+          "entityId": "SEM-6",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "BILLING_RETRY_POLICY",
+          "mutationType": "create",
+          "delta": "retry behavior"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-KK-06",
+          "type": "create_rule_component",
+          "target": "BILLING_RETRY_POLICY"
+        },
+        {
+          "id": "OP-KK-07",
+          "type": "add_test_obligation",
+          "target": "BILLING_RETRY_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 2
+    },
+    {
+      "id": "BE-KP-04",
+      "branchScope": "BR-KP",
+      "triggeredBy": [
+        "SEVT-07"
+      ],
+      "provenance": "branch_generated",
+      "role": "activity",
+      "category": "coordination",
+      "title": "Coordinate billing retry change across ProductTeam and BillingTeam",
+      "relations": [
+        {
+          "entityId": "SEM-6",
+          "type": "coordinates_about"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-KP-05",
+      "branchScope": "BR-KP",
+      "triggeredBy": [
+        "SEVT-07"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Implement billing retry policy in monolith",
+      "relations": [
+        {
+          "entityId": "SEM-6",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "BILLING_RETRY_POLICY",
+          "mutationType": "create",
+          "delta": "retry behavior"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-KP-08",
+          "type": "create_rule_component",
+          "target": "BILLING_RETRY_POLICY"
+        },
+        {
+          "id": "OP-KP-09",
+          "type": "add_test_obligation",
+          "target": "BILLING_RETRY_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 2
+    },
+    {
+      "id": "BE-PK-04",
+      "branchScope": "BR-PK",
+      "triggeredBy": [
+        "SEVT-07"
+      ],
+      "provenance": "branch_generated",
+      "role": "activity",
+      "category": "coordination",
+      "title": "Coordinate billing retry change across ProductTeam and BillingTeam",
+      "relations": [
+        {
+          "entityId": "SEM-6",
+          "type": "coordinates_about"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-PK-05",
+      "branchScope": "BR-PK",
+      "triggeredBy": [
+        "SEVT-07"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Implement billing retry policy in monolith",
+      "relations": [
+        {
+          "entityId": "SEM-6",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "BILLING_RETRY_POLICY",
+          "mutationType": "create",
+          "delta": "retry behavior"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-PK-06",
+          "type": "create_rule_component",
+          "target": "BILLING_RETRY_POLICY"
+        },
+        {
+          "id": "OP-PK-07",
+          "type": "add_test_obligation",
+          "target": "BILLING_RETRY_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 2
+    },
+    {
+      "id": "BE-PP-04",
+      "branchScope": "BR-PP",
+      "triggeredBy": [
+        "SEVT-07"
+      ],
+      "provenance": "branch_generated",
+      "role": "activity",
+      "category": "coordination",
+      "title": "Coordinate billing retry change across ProductTeam and BillingTeam",
+      "relations": [
+        {
+          "entityId": "SEM-6",
+          "type": "coordinates_about"
+        }
+      ],
+      "mutations": [],
+      "operations": [],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-PP-05",
+      "branchScope": "BR-PP",
+      "triggeredBy": [
+        "SEVT-07"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Implement billing retry policy in monolith",
+      "relations": [
+        {
+          "entityId": "SEM-6",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "BILLING_RETRY_POLICY",
+          "mutationType": "create",
+          "delta": "retry behavior"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-PP-08",
+          "type": "create_rule_component",
+          "target": "BILLING_RETRY_POLICY"
+        },
+        {
+          "id": "OP-PP-09",
+          "type": "add_test_obligation",
+          "target": "BILLING_RETRY_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 2
+    },
+    {
+      "id": "BE-CK-05",
+      "branchScope": "BR-C-K",
+      "triggeredBy": [
+        "SEVT-08"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Update VIP cancellation rule in three local representations",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "implements"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "CANCEL_HANDLER",
+          "mutationType": "modify",
+          "delta": "VIP 12h -> 24h"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "CHANGE_DATES_HANDLER",
+          "mutationType": "modify",
+          "delta": "VIP 12h -> 24h"
+        },
+        {
+          "targetType": "branch_representation",
+          "representationKey": "ADMIN_CANCEL_HANDLER",
+          "mutationType": "modify",
+          "delta": "VIP 12h -> 24h"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-CK-06",
+          "type": "modify_rule_implementation",
+          "target": "CANCEL_HANDLER"
+        },
+        {
+          "id": "OP-CK-07",
+          "type": "modify_rule_implementation",
+          "target": "CHANGE_DATES_HANDLER"
+        },
+        {
+          "id": "OP-CK-08",
+          "type": "modify_rule_implementation",
+          "target": "ADMIN_CANCEL_HANDLER"
+        },
+        {
+          "id": "OP-CK-09",
+          "type": "update_test_obligation",
+          "target": "CANCELLATION_TEST_SURFACES"
+        }
+      ],
+      "sequenceWithinTrigger": 1
+    },
+    {
+      "id": "BE-CP-05",
+      "branchScope": "BR-C-P",
+      "triggeredBy": [
+        "SEVT-08"
+      ],
+      "provenance": "branch_generated",
+      "role": "state_change",
+      "category": "implementation",
+      "title": "Update VIP cancellation rule in authoritative CancellationPolicy",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "implements_authoritatively"
+        }
+      ],
+      "mutations": [
+        {
+          "targetType": "branch_representation",
+          "representationKey": "CANCELLATION_POLICY",
+          "mutationType": "modify",
+          "delta": "VIP 12h -> 24h"
+        }
+      ],
+      "operations": [
+        {
+          "id": "OP-CP-09",
+          "type": "modify_rule_implementation",
+          "target": "CANCELLATION_POLICY"
+        },
+        {
+          "id": "OP-CP-10",
+          "type": "update_test_obligation",
+          "target": "CANCELLATION_POLICY_TESTS"
+        }
+      ],
+      "sequenceWithinTrigger": 1
+    }
+  ],
+  "organizationEntities": [
+    {
+      "id": "ORG-1",
+      "name": "ProductTeam",
+      "kind": "Team"
+    },
+    {
+      "id": "ORG-2",
+      "name": "BillingOwnership",
+      "kind": "OwnershipRelation"
+    },
+    {
+      "id": "ORG-3",
+      "name": "BillingTeam",
+      "kind": "Team",
+      "createdBy": "SEVT-06"
+    }
+  ],
+  "representationMappings": [
+    {
+      "branchScope": "BR-ROOT",
+      "effectiveAfter": "SEVT-01",
+      "semanticEntityId": "SEM-2",
+      "representationKey": "CANCEL_HANDLER",
+      "mappingRole": "authoritative"
+    },
+    {
+      "branchScope": "BR-C-K",
+      "effectiveAfter": "SEVT-02",
+      "semanticEntityId": "SEM-2",
+      "representationKey": "CANCEL_HANDLER",
+      "mappingRole": "local_copy"
+    },
+    {
+      "branchScope": "BR-C-K",
+      "effectiveAfter": "SEVT-02",
+      "semanticEntityId": "SEM-2",
+      "representationKey": "CHANGE_DATES_HANDLER",
+      "mappingRole": "local_copy"
+    },
+    {
+      "branchScope": "BR-C-K",
+      "effectiveAfter": "SEVT-03",
+      "semanticEntityId": "SEM-2",
+      "representationKey": "ADMIN_CANCEL_HANDLER",
+      "mappingRole": "local_copy"
+    },
+    {
+      "branchScope": "BR-C-P",
+      "effectiveAfter": "SEVT-02",
+      "semanticEntityId": "SEM-2",
+      "representationKey": "CANCELLATION_POLICY",
+      "mappingRole": "authoritative"
+    },
+    {
+      "branchScope": "BR-C-P",
+      "effectiveAfter": "SEVT-02",
+      "semanticEntityId": "SEM-2",
+      "representationKey": "CANCEL_HANDLER",
+      "mappingRole": "consumer"
+    },
+    {
+      "branchScope": "BR-C-P",
+      "effectiveAfter": "SEVT-02",
+      "semanticEntityId": "SEM-2",
+      "representationKey": "CHANGE_DATES_HANDLER",
+      "mappingRole": "consumer"
+    },
+    {
+      "branchScope": "BR-C-P",
+      "effectiveAfter": "SEVT-03",
+      "semanticEntityId": "SEM-2",
+      "representationKey": "ADMIN_CANCEL_HANDLER",
+      "mappingRole": "consumer"
+    },
+    {
+      "branchScope": "BR-KP",
+      "effectiveAfter": "SEVT-04",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "PAYMENT_PORT",
+      "mappingRole": "authoritative_boundary"
+    },
+    {
+      "branchScope": "BR-KP",
+      "effectiveAfter": "SEVT-04",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "STRIPE_ADAPTER",
+      "mappingRole": "adapter"
+    },
+    {
+      "branchScope": "BR-PP",
+      "effectiveAfter": "SEVT-04",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "PAYMENT_PORT",
+      "mappingRole": "authoritative_boundary"
+    },
+    {
+      "branchScope": "BR-PP",
+      "effectiveAfter": "SEVT-04",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "STRIPE_ADAPTER",
+      "mappingRole": "adapter"
+    },
+    {
+      "branchScope": "BR-KK",
+      "effectiveAfter": "SEVT-05",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "PAYMENT_PORT",
+      "mappingRole": "authoritative_boundary"
+    },
+    {
+      "branchScope": "BR-KK",
+      "effectiveAfter": "SEVT-05",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "STRIPE_ADAPTER",
+      "mappingRole": "adapter"
+    },
+    {
+      "branchScope": "BR-KK",
+      "effectiveAfter": "SEVT-05",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "ADYEN_ADAPTER",
+      "mappingRole": "adapter"
+    },
+    {
+      "branchScope": "BR-PK",
+      "effectiveAfter": "SEVT-05",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "PAYMENT_PORT",
+      "mappingRole": "authoritative_boundary"
+    },
+    {
+      "branchScope": "BR-PK",
+      "effectiveAfter": "SEVT-05",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "STRIPE_ADAPTER",
+      "mappingRole": "adapter"
+    },
+    {
+      "branchScope": "BR-PK",
+      "effectiveAfter": "SEVT-05",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "ADYEN_ADAPTER",
+      "mappingRole": "adapter"
+    },
+    {
+      "branchScope": "BR-KP",
+      "effectiveAfter": "SEVT-05",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "ADYEN_ADAPTER",
+      "mappingRole": "adapter"
+    },
+    {
+      "branchScope": "BR-PP",
+      "effectiveAfter": "SEVT-05",
+      "semanticEntityId": "SEM-3",
+      "representationKey": "ADYEN_ADAPTER",
+      "mappingRole": "adapter"
+    }
+  ],
+  "workEpisodes": [
+    {
+      "id": "WE-ROOT-01",
+      "branchScope": "BR-ROOT",
+      "trigger": "SEVT-01",
+      "eventRefs": [
+        "BE-R-01",
+        "BE-R-02",
+        "BE-R-03"
+      ]
+    },
+    {
+      "id": "WE-CK-02",
+      "branchScope": "BR-C-K",
+      "trigger": "SEVT-02",
+      "eventRefs": [
+        "BE-CK-01",
+        "BE-CK-02",
+        "BE-CK-03"
+      ]
+    },
+    {
+      "id": "WE-CP-02",
+      "branchScope": "BR-C-P",
+      "trigger": "SEVT-02",
+      "eventRefs": [
+        "BE-CP-01",
+        "BE-CP-02",
+        "BE-CP-03"
+      ]
+    },
+    {
+      "id": "WE-CK-03",
+      "branchScope": "BR-C-K",
+      "trigger": "SEVT-03",
+      "eventRefs": [
+        "BE-CK-04"
+      ]
+    },
+    {
+      "id": "WE-CP-03",
+      "branchScope": "BR-C-P",
+      "trigger": "SEVT-03",
+      "eventRefs": [
+        "BE-CP-04"
+      ]
+    },
+    {
+      "id": "WE-KK-05",
+      "branchScope": "BR-KK",
+      "trigger": "SEVT-05",
+      "eventRefs": [
+        "BE-KK-02",
+        "BE-KK-03"
+      ]
+    },
+    {
+      "id": "WE-KP-05",
+      "branchScope": "BR-KP",
+      "trigger": "SEVT-05",
+      "eventRefs": [
+        "BE-KP-03"
+      ]
+    },
+    {
+      "id": "WE-PK-05",
+      "branchScope": "BR-PK",
+      "trigger": "SEVT-05",
+      "eventRefs": [
+        "BE-PK-02",
+        "BE-PK-03"
+      ]
+    },
+    {
+      "id": "WE-PP-05",
+      "branchScope": "BR-PP",
+      "trigger": "SEVT-05",
+      "eventRefs": [
+        "BE-PP-03"
+      ]
+    },
+    {
+      "id": "WE-CK-08",
+      "branchScope": "BR-C-K",
+      "trigger": "SEVT-08",
+      "eventRefs": [
+        "BE-CK-05"
+      ]
+    },
+    {
+      "id": "WE-CP-08",
+      "branchScope": "BR-C-P",
+      "trigger": "SEVT-08",
+      "eventRefs": [
+        "BE-CP-05"
+      ]
+    }
+  ]
+}

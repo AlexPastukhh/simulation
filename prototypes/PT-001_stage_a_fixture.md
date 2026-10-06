@@ -271,7 +271,7 @@ ORG-2 BillingOwnership:
   after: BillingTeam
 
 organization:
-  create BillingTeam
+  create ORG-3 BillingTeam
 ```
 
 This changes organization state only. It does not automatically extract a service or change deployment topology.

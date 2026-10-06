@@ -6,7 +6,7 @@
 prepared
 ```
 
-Stage A fixture prepared. Validation is not complete.
+Stage A and Stage B data preparation completed. Validation is not complete; Stage C/D UI and consistency evidence are still pending.
 
 No result has been promoted into the canonical plan yet.
 
@@ -281,6 +281,18 @@ Stage A does not by itself validate the target model; it establishes the control
 ### Stage B — Branch event generation
 Create branch-generated events and operations.
 
+Status: `completed for data preparation`.
+
+Artifacts:
+
+```text
+PT-001_stage_b_branch_events.md
+PT-001/data/stage_b.json
+PT-001/data/stage_b_validation_report.md
+```
+
+Automatic consistency validation: `PASS` with 0 errors and 0 warnings.
+
 ### Stage C — Low-fidelity walkthrough
 Render Event Stream, Event Inspector, Entity Explorer and Dynamics Compare from the same IDs.
 
@@ -317,7 +329,15 @@ Provisional Stage A checks pass for:
 - independent variation of cancellation and payment decisions;
 - separation of forecast reveal from later requirement occurrence.
 
-No `TQ-*` is yet classified as fully supported. Stage B/C/D evidence is still required.
+Stage B provides provisional data-model evidence:
+- TQ-2 shared ScenarioEvent identity: supported at data-model level;
+- TQ-3 relation vs mutation: supported at data-model level;
+- TQ-4 semantic entity vs branch representation: supported at data-model level;
+- TQ-7 WorkEpisode references: structurally supported.
+
+TQ-1 remains mixed pending UI readability; TQ-5/TQ-6/TQ-8 remain pending Stage C/D.
+
+No `VE-*` has been promoted to the canonical plan yet.
 
 ## Conclusion
 
