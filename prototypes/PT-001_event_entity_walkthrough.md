@@ -3,8 +3,10 @@
 ## Status
 
 ```text
-planned
+prepared
 ```
+
+Stage A fixture prepared. Validation is not complete.
 
 No result has been promoted into the canonical plan yet.
 
@@ -266,6 +268,16 @@ full microservice extraction economics
 ### Stage A — Static scenario model
 Define ScenarioEvents, SemanticEntities and branch representations.
 
+Status: `completed for fixture preparation`.
+
+Artifact:
+
+```text
+PT-001_stage_a_fixture.md
+```
+
+Stage A does not by itself validate the target model; it establishes the controlled dataset for Stages B–D.
+
 ### Stage B — Branch event generation
 Create branch-generated events and operations.
 
@@ -283,7 +295,29 @@ Create `VE-001` in the canonical plan and update only evidence-supported Proposa
 
 ## Results
 
-Not executed yet.
+### Stage A
+
+Prepared a static scenario fixture with:
+
+```text
+1 shared scenario backbone
+8 ScenarioEvents
+6 problem-semantic entities
+organization/environment/information tracked entities
+2 independent DecisionForks
+4 leaf branches from the decision cross-product
+stable semantic identities
+branch-local representation mappings
+explicit information visibility rules
+```
+
+Provisional Stage A checks pass for:
+- architecture-neutral scenario anchors;
+- one shared ScenarioEvent identity across branches;
+- independent variation of cancellation and payment decisions;
+- separation of forecast reveal from later requirement occurrence.
+
+No `TQ-*` is yet classified as fully supported. Stage B/C/D evidence is still required.
 
 ## Conclusion
 

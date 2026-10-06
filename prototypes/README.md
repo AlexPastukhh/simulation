@@ -52,8 +52,11 @@ Failed and negative prototypes remain preserved.
 
 Validates the event-centric simulation model against one concrete Booking SaaS walkthrough before event/entity schema freeze.
 
-File:
+Files:
 
 ```text
 PT-001_event_entity_walkthrough.md
+PT-001_stage_a_fixture.md
 ```
+
+Current status: `prepared` — Stage A fixture exists; validation continues with Stage B.
