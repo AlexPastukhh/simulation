@@ -1,6 +1,6 @@
 # PT-001 Implementation
 
-Status: `Stage B data prepared and validated; Stage C UI not started`.
+Status: `Stage C UI implemented; build/lint/runtime smoke passed; Stage D manual audit pending`.
 
 Disposable prototype implementation for PT-001.
 
@@ -30,12 +30,25 @@ PT-001/
     validate_stage_b.py
 ```
 
-Stage C will add:
+Stage C implementation:
 
 ```text
 app/
   React + TypeScript + Vite
+  src/model.ts
+  src/App.tsx
+  scripts/sync-data.mjs
 ```
+
+Run:
+
+```text
+cd app
+npm install
+npm run dev -- --host 127.0.0.1 --port 4173
+```
+
+The dev/build lifecycle syncs `../data/stage_b.json` into generated `public/stage_b.json`.
 
 The prototype code is disposable.
 Validated evidence is promoted through `VE-*`; prototype implementation choices are not canonical by themselves.

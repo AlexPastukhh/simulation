@@ -52,6 +52,19 @@ data['representationMappings'] = [
     {'branchScope':'BR-PP','effectiveAfter':'SEVT-05','semanticEntityId':'SEM-3','representationKey':'ADYEN_ADAPTER','mappingRole':'adapter'},
 ]
 
+scenario_semantics = {
+    'SEVT-01': {'relations':[{'entityId':'SEM-2','type':'changes_semantics'}], 'semanticMutations':[{'targetId':'SEM-2','targetKind':'BusinessRule','mutationType':'modify','delta':'add VIP >= 12h cancellation rule'}]},
+    'SEVT-02': {'relations':[{'entityId':'SEM-2','type':'changes_applicability'}], 'semanticMutations':[{'targetId':'SEM-2','targetKind':'BusinessRule','mutationType':'modify','delta':'apply policy to ChangeBookingDates'}]},
+    'SEVT-03': {'relations':[{'entityId':'SEM-2','type':'changes_applicability'}], 'semanticMutations':[{'targetId':'SEM-2','targetKind':'BusinessRule','mutationType':'modify','delta':'apply policy to AdminCancel'}]},
+    'SEVT-04': {'relations':[{'targetId':'INFO-1','type':'reveals'}], 'semanticMutations':[{'targetId':'INFO-1','targetKind':'InformationItem','mutationType':'modify','delta':'reveal medium-confidence second-provider forecast'}]},
+    'SEVT-05': {'relations':[{'entityId':'SEM-3','type':'changes_requirement'}], 'semanticMutations':[{'targetId':'SEM-3','targetKind':'BusinessCapability','mutationType':'modify','delta':'require Stripe + Adyen'}]},
+    'SEVT-06': {'relations':[{'targetId':'ORG-2','type':'changes_ownership'}], 'semanticMutations':[{'targetId':'ORG-2','targetKind':'OwnershipRelation','mutationType':'modify','delta':'Billing ownership ProductTeam -> BillingTeam'},{'targetId':'ORG-3','targetKind':'Team','mutationType':'create','delta':'create BillingTeam'}]},
+    'SEVT-07': {'relations':[{'entityId':'SEM-6','type':'creates_requirement'}], 'semanticMutations':[{'targetId':'SEM-6','targetKind':'BusinessRule','mutationType':'create','delta':'failed billing attempts require retry behavior'}]},
+    'SEVT-08': {'relations':[{'entityId':'SEM-2','type':'changes_semantics'}], 'semanticMutations':[{'targetId':'SEM-2','targetKind':'BusinessRule','mutationType':'modify','delta':'VIP cancellation window 12h -> 24h'}]},
+}
+for event in data['scenarioEvents']:
+    event.update(scenario_semantics[event['id']])
+
 data['workEpisodes'] = [
     {'id':'WE-ROOT-01','branchScope':'BR-ROOT','trigger':'SEVT-01','eventRefs':['BE-R-01','BE-R-02','BE-R-03']},
     {'id':'WE-CK-02','branchScope':'BR-C-K','trigger':'SEVT-02','eventRefs':['BE-CK-01','BE-CK-02','BE-CK-03']},

@@ -3,10 +3,10 @@
 ## Status
 
 ```text
-prepared
+running
 ```
 
-Stage A and Stage B data preparation completed. Validation is not complete; Stage C/D UI and consistency evidence are still pending.
+Stage A and Stage B data preparation completed. Stage C low-fidelity UI is implemented and technically validated; visual/manual Stage D audit is still pending.
 
 No result has been promoted into the canonical plan yet.
 
@@ -296,6 +296,17 @@ Automatic consistency validation: `PASS` with 0 errors and 0 warnings.
 ### Stage C — Low-fidelity walkthrough
 Render Event Stream, Event Inspector, Entity Explorer and Dynamics Compare from the same IDs.
 
+Status: `implemented / technical smoke passed`.
+
+Artifact:
+
+```text
+PT-001_stage_c_ui.md
+PT-001/app/
+```
+
+Build, lint and localhost data smoke all pass. Visual interpretation remains for Stage D.
+
 ### Stage D — Consistency audit
 Check every visible element against canonical event/entity data.
 
@@ -335,7 +346,9 @@ Stage B provides provisional data-model evidence:
 - TQ-4 semantic entity vs branch representation: supported at data-model level;
 - TQ-7 WorkEpisode references: structurally supported.
 
-TQ-1 remains mixed pending UI readability; TQ-5/TQ-6/TQ-8 remain pending Stage C/D.
+Stage C additionally establishes executable projections for TQ-2/TQ-3/TQ-4 and implements the first UI for TQ-5/TQ-6.
+
+TQ-1 remains mixed pending visual readability review; TQ-5/TQ-6 remain implemented but not yet interpreted; TQ-7 lacks a dedicated WorkEpisode inspector; TQ-8 remains pending because scalar cost is intentionally absent.
 
 No `VE-*` has been promoted to the canonical plan yet.
 

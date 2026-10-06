@@ -58,7 +58,8 @@ Files:
 PT-001_event_entity_walkthrough.md
 PT-001_stage_a_fixture.md
 PT-001_stage_b_branch_events.md
+PT-001_stage_c_ui.md
 PT-001/
 ```
 
-Current status: `prepared` — Stage A and Stage B data preparation are complete; Stage C UI validation is next.
+Current status: `running` — Stage C UI is implemented and technically validated; Stage D visual/consistency audit is next.

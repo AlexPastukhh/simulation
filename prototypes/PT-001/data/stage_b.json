@@ -66,56 +66,174 @@
       "order": 1,
       "role": "stimulus",
       "category": "requirement",
-      "title": "Add VIP cancellation rule"
+      "title": "Add VIP cancellation rule",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "changes_semantics"
+        }
+      ],
+      "semanticMutations": [
+        {
+          "targetId": "SEM-2",
+          "targetKind": "BusinessRule",
+          "mutationType": "modify",
+          "delta": "add VIP >= 12h cancellation rule"
+        }
+      ]
     },
     {
       "id": "SEVT-02",
       "order": 2,
       "role": "stimulus",
       "category": "requirement",
-      "title": "ChangeBookingDates must obey cancellation policy"
+      "title": "ChangeBookingDates must obey cancellation policy",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "changes_applicability"
+        }
+      ],
+      "semanticMutations": [
+        {
+          "targetId": "SEM-2",
+          "targetKind": "BusinessRule",
+          "mutationType": "modify",
+          "delta": "apply policy to ChangeBookingDates"
+        }
+      ]
     },
     {
       "id": "SEVT-03",
       "order": 3,
       "role": "stimulus",
       "category": "requirement",
-      "title": "Admin cancellation must obey the same policy"
+      "title": "Admin cancellation must obey the same policy",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "changes_applicability"
+        }
+      ],
+      "semanticMutations": [
+        {
+          "targetId": "SEM-2",
+          "targetKind": "BusinessRule",
+          "mutationType": "modify",
+          "delta": "apply policy to AdminCancel"
+        }
+      ]
     },
     {
       "id": "SEVT-04",
       "order": 4,
       "role": "information",
       "category": "external_system",
-      "title": "Second payment provider signal revealed"
+      "title": "Second payment provider signal revealed",
+      "relations": [
+        {
+          "targetId": "INFO-1",
+          "type": "reveals"
+        }
+      ],
+      "semanticMutations": [
+        {
+          "targetId": "INFO-1",
+          "targetKind": "InformationItem",
+          "mutationType": "modify",
+          "delta": "reveal medium-confidence second-provider forecast"
+        }
+      ]
     },
     {
       "id": "SEVT-05",
       "order": 5,
       "role": "stimulus",
       "category": "requirement",
-      "title": "Support a second payment provider"
+      "title": "Support a second payment provider",
+      "relations": [
+        {
+          "entityId": "SEM-3",
+          "type": "changes_requirement"
+        }
+      ],
+      "semanticMutations": [
+        {
+          "targetId": "SEM-3",
+          "targetKind": "BusinessCapability",
+          "mutationType": "modify",
+          "delta": "require Stripe + Adyen"
+        }
+      ]
     },
     {
       "id": "SEVT-06",
       "order": 6,
       "role": "state_change",
       "category": "organization",
-      "title": "Billing ownership moves to BillingTeam"
+      "title": "Billing ownership moves to BillingTeam",
+      "relations": [
+        {
+          "targetId": "ORG-2",
+          "type": "changes_ownership"
+        }
+      ],
+      "semanticMutations": [
+        {
+          "targetId": "ORG-2",
+          "targetKind": "OwnershipRelation",
+          "mutationType": "modify",
+          "delta": "Billing ownership ProductTeam -> BillingTeam"
+        },
+        {
+          "targetId": "ORG-3",
+          "targetKind": "Team",
+          "mutationType": "create",
+          "delta": "create BillingTeam"
+        }
+      ]
     },
     {
       "id": "SEVT-07",
       "order": 7,
       "role": "stimulus",
       "category": "requirement",
-      "title": "Add billing retry workflow"
+      "title": "Add billing retry workflow",
+      "relations": [
+        {
+          "entityId": "SEM-6",
+          "type": "creates_requirement"
+        }
+      ],
+      "semanticMutations": [
+        {
+          "targetId": "SEM-6",
+          "targetKind": "BusinessRule",
+          "mutationType": "create",
+          "delta": "failed billing attempts require retry behavior"
+        }
+      ]
     },
     {
       "id": "SEVT-08",
       "order": 8,
       "role": "stimulus",
       "category": "requirement",
-      "title": "VIP cancellation window changes to 24h"
+      "title": "VIP cancellation window changes to 24h",
+      "relations": [
+        {
+          "entityId": "SEM-2",
+          "type": "changes_semantics"
+        }
+      ],
+      "semanticMutations": [
+        {
+          "targetId": "SEM-2",
+          "targetKind": "BusinessRule",
+          "mutationType": "modify",
+          "delta": "VIP cancellation window 12h -> 24h"
+        }
+      ]
     }
   ],
   "semanticEntities": [
