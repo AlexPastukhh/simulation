@@ -1,13 +1,21 @@
 # PT-001 Implementation
 
-Status: `Stage C UI implemented; build/lint/runtime smoke passed; Stage D manual audit pending`.
+Status: `Stage C UI implemented; build/lint/runtime smoke passed; later replay-shell UX experiment exists; formal PT-001 interpretation / VE promotion pending`.
 
 Disposable prototype implementation for PT-001.
 
-Canonical plan:
+Original canonical candidate under test:
 
 ```text
 ..\..\architecture_simulator_proposal_composition_v3a_candidate_r4.md
+```
+
+Do not retarget PT-001 retroactively to r5.
+
+R6/r5 requirement-surface and branch Feature Model questions continue in:
+
+```text
+..\PT-002_requirement_surface_feature_model_state_canvas.md
 ```
 
 Prototype specification:

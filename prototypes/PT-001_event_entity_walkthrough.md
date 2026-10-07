@@ -6,15 +6,29 @@
 running
 ```
 
-Stage A and Stage B data preparation completed. Stage C low-fidelity UI is implemented and technically validated; visual/manual Stage D audit is still pending.
+Stage A and Stage B data preparation completed. Stage C low-fidelity UI is implemented and technically validated. A later live time-travel UX experiment improved the event/state causal shell, but PT-001 still lacks formal Stage E interpretation and VE promotion.
 
 No result has been promoted into the canonical plan yet.
 
 ## Canonical plan under test
 
+Original target:
+
 ```text
 architecture_simulator_proposal_composition_v3a_candidate_r4.md
 ```
+
+R6 and `V3A-candidate-r5` do **not** retroactively retarget PT-001.
+
+PT-001 remains the validation lineage for the event/entity/replay shell introduced under r4.
+
+New requirement-surface / Feature-grouping semantics are assigned to:
+
+```text
+PT-002_requirement_surface_feature_model_state_canvas.md
+```
+
+This preserves review/prototype provenance instead of pretending PT-001 always tested the r5 semantic model.
 
 ## Purpose
 
