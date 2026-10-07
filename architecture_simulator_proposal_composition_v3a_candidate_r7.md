@@ -814,21 +814,35 @@ implementation mappings
 
 ### Behavior Responsibility Unit
 
-`BehaviorResponsibilityUnit` is the preferred neutral logical unit for architecture-side behavior responsibility.
+`BehaviorResponsibilityUnit` is a logical projection for architecture-side behavior responsibility. It is not the mandatory universal storage unit or primary reasoning unit for every architecture style.
 
 A BRU:
 - may cover one or many requirement/Behavior Unit occurrences;
 - may cooperate with other BRUs to satisfy one occurrence;
 - may be shared across contexts;
-- does not have to map 1:1 to a physical module/service/file.
+- does not have to map 1:1 to a physical module/service/file;
+- may coincide with an architecture-native element when that is meaningful.
 
-`Feature` is a possible subtype/label/view of BRU when meaningful.
+Architecture Planning may also represent architecture-native entities/responsibilities appropriate to the selected architecture, for example:
+
+```text
+Feature
+DDD Aggregate
+Policy / business knowledge owner
+Service
+Module
+Shared technical capability / helper
+```
+
+These are not required to become BRUs merely to fit the model.
 
 Feature does **not** mean Vertical Slice.
 
 In a layered architecture, a Feature may be a useful logical functional trace across layers even if the physical organization is by layer.
 
-The future question of the architecture's primary reasoning/planning unit remains open and does not change BRU's usefulness as a behavior-responsibility projection.
+Architecture Planning may intentionally consolidate, separate, or duplicate representations of requirement-side material into architecture-side responsibilities or knowledge owners. This is an architectural choice and does not create semantic identity or deduplication in Requirement Model.
+
+The primary architecture-native reasoning/planning unit remains architecture-dependent and open. BRU remains useful as a behavior-responsibility projection.
 
 **REQUIRES:** P-39.
 
@@ -1035,26 +1049,31 @@ This enables no-hindsight inspection, planning-quality analysis and structural p
 Possible targets:
 
 ```text
-Behavior Responsibility Unit
+Architecture-native element / responsibility
+Behavior Responsibility Unit projection
 Screen / Widget
-architecture dependency
+architecture structure or connection
 ownership / deployment
 File / implementation artifact
 data/runtime artifact
 test/migration/deployment obligation
 ```
 
+Evolution Impact targets architecture structure where useful, but does not require a universal relation taxonomy. Architecture connections may remain architecture-specific unless a later computation requires stable semantics.
+
 For architecture structure, before/after snapshots should derive impact where possible rather than duplicate truth manually.
 
-For a target entity, users can inspect impact history across the map:
+For a selected architecture item, users can inspect projected impact history across the map:
 
 ```text
-Cancellation BRU
+CancellationPolicy
 S2 introduced
 S4 admin variation added
 S7 audit responsibility extracted
 ...
 ```
+
+The same projection may show future planned impacts from later Evolution Steps relative to the selected Evolution Map and snapshot. The source of truth remains Step -> EvolutionImpact.
 
 Forward Evolution Consistency checks current/planned work against known later impacts.
 
