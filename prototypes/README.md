@@ -74,7 +74,7 @@ Current status: `running` — Stage C UI is technically validated and the later 
 
 ### PT-002 — Requirement Surface / Feature Model / State Canvas
 
-Validates the r5 candidate semantics introduced after R6:
+Historical semantic experiment for the r5 candidate:
 
 ```text
 Requirement Surface
@@ -82,15 +82,11 @@ Requirement Surface
   -> Current Realization / TeamPlan
 ```
 
-Primary questions:
-- Screen / Widget / ProductFunctionalRequirement ownership;
-- identical independent requirements;
-- branch-specific Feature grouping;
-- RequirementCoverage N:M;
-- BusinessRule reuse independent of Feature reuse;
-- non-UI ProductFunctionalRequirements whose trigger does not predefine a Feature boundary;
-- Required / Design / Current / Plan state layers;
-- domain-specific State Canvas projections.
+Primary mechanics still useful to later prototypes:
+- branch-specific event identities;
+- canonical mutation ledger;
+- synchronized event/state replay;
+- first-class ScenarioStep / Widget mechanics.
 
 File:
 
@@ -98,6 +94,41 @@ File:
 PT-002_requirement_surface_feature_model_state_canvas.md
 ```
 
-Current status: `running` — Stage A-C plus the Stage D semantic slice are implemented in `PT-002/app`; PT-002-R1 structural remediation is applied, invariant checks/build/lint pass, and production-preview smoke is verified separately on HOST. Stage E interpretation is still pending, so no `VE-*` has been promoted.
+Current status: `running / historically bounded` — PT-002-R1 structural remediation and technical checks pass, but its PFR/Feature/Required-Design-Current-Plan semantics are partially superseded by R7/R8. Stage E interpretation was never promoted into `VE-*`; PT-002 must not be treated as validation of PT-003 semantics.
 
-PT-002 may reuse PT-001 replay mechanics, but does not inherit semantic validation from PT-001.
+### PT-003 — Requirement Model / Architecture Planning / Evolution Map
+
+Validates the r7 candidate after R7/R8:
+
+```text
+Actual Event History
+  -> non-normalized Requirement Model
+  -> factual CURRENT architecture
+
+Planning Event
+  -> immutable Plan Revision BASE
+  -> immutable Evolution Step versions
+  -> full target Architecture Snapshot per Step
+  -> replanning / Evolution Options
+```
+
+Primary questions:
+- non-normalized requirement material and occurrence tracing;
+- one Requirement Model at the Actual Event cursor;
+- BRUs as architecture-side behavior responsibilities;
+- CURRENT vs immutable historical BASE;
+- historical requirement knowledge / no hindsight;
+- immutable Step versions + `REVISED_FROM` lineage;
+- non-monotonic full planned snapshots;
+- plan disruption after an unforeseen requirement;
+- Evolution Option trigger -> Planning Event -> concrete Step;
+- whether full target snapshots make Step-version churn understandable or excessive.
+
+Files:
+
+```text
+PT-003_requirement_architecture_evolution_map.md
+PT-003/app/
+```
+
+Current status: `running` — semantic fixture and UI implementation are synchronized to HOST; model invariants, build, lint and production-preview HTTP smoke pass. Human semantic audit remains pending, so no `VE-*` promotion is performed.
