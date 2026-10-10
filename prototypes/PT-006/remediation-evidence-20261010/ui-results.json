@@ -1,0 +1,140 @@
+{
+  "baseline": {
+    "surfaces": 144,
+    "frames": [
+      {
+        "event": "A-01",
+        "requirements": 2,
+        "files": [
+          "src/ui/booking.tsx",
+          "src/booking.ts",
+          "src/data/repo.ts"
+        ],
+        "plan": "PLAN-A-R0"
+      },
+      {
+        "event": "A-02",
+        "requirements": 2,
+        "files": [
+          "src/ui/booking.tsx",
+          "src/api/booking.ts",
+          "src/data/repo.ts"
+        ],
+        "plan": "PLAN-A-R1"
+      },
+      {
+        "event": "EXT-01",
+        "requirements": 2,
+        "files": [
+          "src/ui/booking.tsx",
+          "src/api/booking.ts",
+          "src/data/repo.ts"
+        ],
+        "plan": "PLAN-A-R1"
+      },
+      {
+        "event": "A-04",
+        "requirements": 3,
+        "files": [
+          "src/ui/booking.tsx",
+          "src/api/booking.ts",
+          "src/data/repo.ts"
+        ],
+        "plan": "PLAN-A-R2"
+      },
+      {
+        "event": "B-01",
+        "requirements": 2,
+        "files": [
+          "src/app.ts",
+          "src/legacy-storage.ts"
+        ],
+        "plan": "PLAN-B-R0"
+      },
+      {
+        "event": "B-02",
+        "requirements": 2,
+        "files": [
+          "src/app.ts",
+          "src/storage.ts"
+        ],
+        "plan": "PLAN-B-R1"
+      },
+      {
+        "event": "EXT-01",
+        "requirements": 2,
+        "files": [
+          "src/app.ts",
+          "src/storage.ts"
+        ],
+        "plan": "PLAN-B-R1"
+      },
+      {
+        "event": "B-04",
+        "requirements": 2,
+        "files": [
+          "src/app.ts",
+          "src/storage.ts"
+        ],
+        "plan": "PLAN-B-R2"
+      },
+      {
+        "event": "B-05",
+        "requirements": 2,
+        "files": [
+          "src/app.ts",
+          "src/storage.ts"
+        ],
+        "plan": "PLAN-B-R2"
+      }
+    ]
+  },
+  "p02": {
+    "finding": "P6R-F-P-02",
+    "factualContainsMarker": true,
+    "legacyActualContainsMarker": true,
+    "plannedSameIdKeepsArchive": true,
+    "selectedRevision": "PLAN-A-R1"
+  },
+  "p03": {
+    "finding": "P6R-F-P-03",
+    "selectedEvent": "A-02",
+    "archivedRequirements": [
+      "R-01",
+      "R-02"
+    ],
+    "visibleKnownRequirements": 2
+  },
+  "order": {
+    "orderedPlanHistoryVisible": true
+  },
+  "trace": {
+    "ownTraceFactVisible": true
+  },
+  "sources": {
+    "actualArchitectureAndFiles": true
+  },
+  "material": {
+    "plannedActivities": true,
+    "concreteForecast": true,
+    "routeGrounds": true,
+    "axisHistory": true,
+    "separateTimeStatements": true,
+    "crossRouteFitness": true,
+    "workContext": true,
+    "unknownCosts": true,
+    "actualDeadlineMiss": true
+  },
+  "references": {
+    "draftSaved": true,
+    "referenceWarningVisible": true
+  },
+  "migration": {
+    "customFactPreserved": true,
+    "customArchivePreserved": true,
+    "layoutAndGeometryPreserved": true,
+    "untouchedFixtureUpgraded": true,
+    "oldStorageRetained": true
+  },
+  "errors": []
+}

@@ -1,0 +1,29 @@
+{
+  "forecasts": {
+    "separateDatesVisible": true,
+    "textFits": true
+  },
+  "work": {
+    "workConditionsVisible": true,
+    "textFits": true
+  },
+  "costs": {
+    "unknownQuantityVisible": true,
+    "sourceAndRecurringVisible": true
+  },
+  "plan": {
+    "nonStepActivityVisible": true
+  },
+  "p02": {
+    "finding": "P6R-F-P-02",
+    "factualContainsMarker": true,
+    "legacyActualContainsMarker": true,
+    "plannedSameIdKeepsArchive": true,
+    "selectedRevision": "PLAN-A-R1"
+  },
+  "references": {
+    "draftSaved": true,
+    "referenceWarningVisible": true
+  },
+  "errors": []
+}

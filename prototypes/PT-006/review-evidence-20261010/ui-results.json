@@ -1,0 +1,112 @@
+{
+  "baseline": {
+    "surfaces": 144,
+    "frames": [
+      {
+        "event": "A-01",
+        "requirements": 2,
+        "files": [
+          "src/ui/booking.tsx",
+          "src/booking.ts",
+          "src/data/repo.ts"
+        ],
+        "plan": "PLAN-A-R0"
+      },
+      {
+        "event": "A-02",
+        "requirements": 2,
+        "files": [
+          "src/ui/booking.tsx",
+          "src/api/booking.ts",
+          "src/data/repo.ts"
+        ],
+        "plan": "PLAN-A-R1"
+      },
+      {
+        "event": "EXT-01",
+        "requirements": 2,
+        "files": [
+          "src/ui/booking.tsx",
+          "src/api/booking.ts",
+          "src/data/repo.ts"
+        ],
+        "plan": "PLAN-A-R1"
+      },
+      {
+        "event": "A-04",
+        "requirements": 3,
+        "files": [
+          "src/ui/booking.tsx",
+          "src/api/booking.ts",
+          "src/data/repo.ts"
+        ],
+        "plan": "PLAN-A-R2"
+      },
+      {
+        "event": "B-01",
+        "requirements": 2,
+        "files": [
+          "src/app.ts",
+          "src/legacy-storage.ts"
+        ],
+        "plan": "PLAN-B-R0"
+      },
+      {
+        "event": "B-02",
+        "requirements": 2,
+        "files": [
+          "src/app.ts",
+          "src/storage.ts"
+        ],
+        "plan": "PLAN-B-R1"
+      },
+      {
+        "event": "EXT-01",
+        "requirements": 2,
+        "files": [
+          "src/app.ts",
+          "src/storage.ts"
+        ],
+        "plan": "PLAN-B-R1"
+      },
+      {
+        "event": "B-04",
+        "requirements": 2,
+        "files": [
+          "src/app.ts",
+          "src/storage.ts"
+        ],
+        "plan": "PLAN-B-R2"
+      }
+    ]
+  },
+  "p02": {
+    "finding": "P6R-F-P-02",
+    "factualContainsMarker": true,
+    "legacyActualContainsMarker": false,
+    "archivedRevision": "PLAN-A-R1",
+    "storedCurrentRef": "A-CURRENT"
+  },
+  "p03": {
+    "finding": "P6R-F-P-03",
+    "selectedEvent": "A-02",
+    "archivedRequirements": [
+      "R-01",
+      "R-02"
+    ],
+    "visibleKnownRequirements": 0
+  },
+  "p05": {
+    "finding": "P6R-F-P-05",
+    "traceSources": [],
+    "archiveNoteOmitted": true,
+    "visibleMessage": "Содержательные поля не менялись"
+  },
+  "migration": {
+    "preserved": true,
+    "independentArchive": true,
+    "imported": true,
+    "layout": true
+  },
+  "errors": []
+}

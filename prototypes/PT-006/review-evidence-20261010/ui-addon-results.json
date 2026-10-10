@@ -1,0 +1,57 @@
+{
+  "trace": {
+    "finding": "P6R-F-P-05",
+    "traceSources": [
+      "Requirement Model",
+      "Architecture",
+      "Implementation / Files"
+    ],
+    "archiveNoteOmitted": true,
+    "visibleMessage": "Содержательные поля не менялись"
+  },
+  "impact": {
+    "finding": "P6R-F-P-05",
+    "target": "API",
+    "actualFileShown": true,
+    "actualChangePaths": [
+      "$.architecture.responsibilities[id=API]",
+      "$.files[path=src/api/booking.ts]"
+    ],
+    "historySources": [
+      "Evolution Impact",
+      "Plan"
+    ],
+    "historyChangePaths": [
+      "impact.records[id=I0]",
+      "impact.records[id=I1]",
+      "impact.records[id=I2]",
+      "impact.records[id=I3]",
+      "plan.revision",
+      "plan.basedOnActualEventRef",
+      "plan.steps[id=S0]",
+      "plan.steps[id=S1]",
+      "plan.steps[id=S2]",
+      "plan.steps[id=S3]",
+      "plan.anticipatedEvents[id=F1]",
+      "plan.changeAxes[id=AX1]",
+      "plan.deadline.title",
+      "plan.deadline.date"
+    ]
+  },
+  "drag": {
+    "delta": {
+      "x": 50,
+      "y": 35
+    },
+    "wheelScroll": 80,
+    "heldScreenDelta": 0,
+    "persistedRect": {
+      "x": 72,
+      "y": 143,
+      "w": 350,
+      "h": 745
+    },
+    "finished": true
+  },
+  "errors": []
+}

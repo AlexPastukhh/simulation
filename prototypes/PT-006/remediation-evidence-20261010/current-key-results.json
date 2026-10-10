@@ -1,0 +1,15 @@
+{
+  "firstLoad": {
+    "untouchedPrimaryKeyUpgraded": true,
+    "customPrimaryKeyPreserved": true,
+    "customArchivePreserved": true,
+    "noLegacyFallback": true
+  },
+  "secondLoad": {
+    "untouchedPrimaryKeyUpgraded": true,
+    "customPrimaryKeyPreserved": true,
+    "customArchivePreserved": true,
+    "noLegacyFallback": true
+  },
+  "errors": []
+}
