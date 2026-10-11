@@ -75,3 +75,16 @@
 .markdown-fixture-content textarea{min-height:185px;resize:vertical}
 .markdown-fixture-preview{padding:12px;background:#20313d;border-radius:6px;border:1px solid #45646c}
 .markdown-fixture-preview pre{white-space:pre-wrap;word-wrap:break-word;font:13px/1.5 ui-monospace,Consolas,monospace}
+/* Screen navigation belongs to the entire Workspace width, never the crowded toolbar.
+   All screens remain directly clickable: rows grow naturally; no clipped/scrolled tabs. */
+.top-header{height:auto;min-height:74px;flex-wrap:wrap;row-gap:10px;padding-top:10px;padding-bottom:10px}
+.header-actions{flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.screen-rail{position:relative;z-index:13;flex:0 0 auto;display:flex;align-items:flex-start;gap:16px;padding:10px 22px;background:#15263d;border-bottom:1px solid #304663}
+.screen-rail-label{flex:0 0 68px;font-size:10px;font-weight:800;letter-spacing:.09em;line-height:36px;color:#9eb8df;white-space:nowrap}
+.screen-rail .screen-tabs{display:flex;flex:1 1 auto;min-width:0;flex-wrap:wrap;align-items:center;gap:8px;padding:0;overflow:visible;white-space:normal}
+.screen-rail .screen-tab-wrap{flex:0 1 auto;max-width:100%}
+.screen-rail .screen-tab{height:auto;min-height:36px;max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left;line-height:1.3;padding:7px 30px 7px 12px}
+.screen-rail .screen-close{top:50%;transform:translateY(-50%)}
+.screen-rail .new-screen{height:36px;white-space:nowrap}
+.screen-rail .screen-create-menu{z-index:65}
+@media (max-width:980px){.screen-rail{padding:9px 12px;gap:9px}.screen-rail-label{flex-basis:54px}}

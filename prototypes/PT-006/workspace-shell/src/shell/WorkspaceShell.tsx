@@ -133,7 +133,7 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
   const [renameValue,setRenameValue]=useState('')
   const [fitArmed,setFitArmed]=useState<string|null>(null)
   const [settingsOpen,setSettingsOpen]=useState(false)
-  const [screenMenu,setScreenMenu]=useState<{left:number}|null>(null)
+  const [screenMenu,setScreenMenu]=useState<{left:number;top:number}|null>(null)
   const [contextMenu,setContextMenu]=useState(false)
   const [compositionMenu,setCompositionMenu]=useState(false)
   const [compositionMode,setCompositionMode]=useState<'ready'|'manual'>('ready')
@@ -307,7 +307,10 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
   const toggleScreenMenu=(button:HTMLButtonElement)=>{
     if(screenMenu){setScreenMenu(null);return}
     const bounds=button.getBoundingClientRect()
-    setScreenMenu({left:Math.max(12,Math.min(bounds.left,window.innerWidth-344))})
+    setScreenMenu({
+      left:Math.max(12,Math.min(bounds.left,window.innerWidth-344)),
+      top:bounds.bottom+6,
+    })
     setSettingsOpen(false)
     setContextMenu(false)
     setCompositionMenu(false)
@@ -330,15 +333,6 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
     <header className="top-header">
       <div className="brand"><div className="brand-symbol">▦</div><div><strong>{profile.title}</strong><small>{profile.subtitle}</small></div></div>
       {profile.renderHeader()}
-      <nav className="screen-tabs" aria-label="Экраны">
-        {workspace.screens.map(s=><div className="screen-tab-wrap" key={s.id}><button className={s.id===screen.id?'screen-tab current':'screen-tab'} onClick={()=>selectScreen(s.id)}>{s.title}</button>{workspace.screens.length>1&&<button title={'Закрыть экран '+s.title} aria-label={'Закрыть экран '+s.title} className="screen-close" onClick={()=>{modify(w=>ops.removeScreen(w,s.id));setPicker(null);setFocused(null)}}>×</button>}</div>)}
-        <button className="new-screen" onClick={e=>toggleScreenMenu(e.currentTarget)} aria-expanded={Boolean(screenMenu)} aria-haspopup="dialog" aria-controls="screen-create-menu" title="Создать экран">+ Экран ▾</button>
-      </nav>
-      {screenMenu&&<section className="screen-create-menu" id="screen-create-menu" role="dialog" aria-label="Создать экран" style={{left:screenMenu.left}}>
-        <div className="screen-create-title"><strong>Создать экран</strong><button aria-label="Закрыть выбор экрана" onClick={()=>setScreenMenu(null)}>×</button></div>
-        <button className="screen-create-option" onClick={addBlankScreen}><strong>＋ Пустой экран</strong><small>Создать рабочую область без окон</small></button>
-        <button className="screen-create-option" onClick={copyCurrentScreen}><strong>⧉ Копия текущего</strong><small>Копирует окна и расположение, данные остаются общими</small></button>
-      </section>}
       <div className="header-actions">
         {profile.createContext&&<button className="header-btn create-context" aria-expanded={contextMenu} onClick={()=>profile.contextTemplateOptions?.length?setContextMenu(v=>!v):addContext()}>+ Контекст</button>}
         {profile.prepareComparison&&<button className="header-btn compose-trigger" aria-expanded={compositionMenu} onClick={()=>{setCompositionMenu(v=>!v);setContextMenu(false);setScreenMenu(null)}}>⇄ Композиция</button>}
@@ -370,6 +364,18 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
         <div className="settings-footer"><span>0–32 px · сохраняется в браузере</span><button onClick={()=>setFitGap(DEFAULT_FIT_GAP)}>Сбросить: 4 px</button></div>
       </section>}
     </header>
+    <div className="screen-rail">
+      <span className="screen-rail-label">ЭКРАНЫ</span>
+      <nav className="screen-tabs" aria-label="Экраны">
+        {workspace.screens.map(s=><div className="screen-tab-wrap" key={s.id}><button className={s.id===screen.id?'screen-tab current':'screen-tab'} aria-current={s.id===screen.id?'page':undefined} onClick={()=>selectScreen(s.id)}>{s.title}</button>{workspace.screens.length>1&&<button title={'Закрыть экран '+s.title} aria-label={'Закрыть экран '+s.title} className="screen-close" onClick={()=>{modify(w=>ops.removeScreen(w,s.id));setPicker(null);setFocused(null)}}>×</button>}</div>)}
+        <button className="new-screen" onClick={e=>toggleScreenMenu(e.currentTarget)} aria-expanded={Boolean(screenMenu)} aria-haspopup="dialog" aria-controls="screen-create-menu" title="Создать экран">+ Экран ▾</button>
+      </nav>
+      {screenMenu&&<section className="screen-create-menu" id="screen-create-menu" role="dialog" aria-label="Создать экран" style={{left:screenMenu.left,top:screenMenu.top,maxHeight:`calc(100vh - ${screenMenu.top+12}px)`}}>
+        <div className="screen-create-title"><strong>Создать экран</strong><button aria-label="Закрыть выбор экрана" onClick={()=>setScreenMenu(null)}>×</button></div>
+        <button className="screen-create-option" onClick={addBlankScreen}><strong>＋ Пустой экран</strong><small>Создать рабочую область без окон</small></button>
+        <button className="screen-create-option" onClick={copyCurrentScreen}><strong>⧉ Копия текущего</strong><small>Копирует окна и расположение, данные остаются общими</small></button>
+      </section>}
+    </div>
     <div className="context-bar" ref={scrollZone} title="Колёсико над этой панелью прокручивает рабочее поле"><div className="context-title"><span className="eyebrow">АКТИВНЫЙ ЭКРАН</span>{rename?<form onSubmit={e=>{e.preventDefault();modify(w=>ops.renameScreen(w,screen.id,renameValue));setRename(false)}}><input autoFocus value={renameValue} onChange={e=>setRenameValue(e.target.value)} onBlur={()=>setRename(false)}/></form>:<button className="rename-screen" onClick={()=>{setRename(true);setRenameValue(screen.title)}}>{screen.title} <span>✎</span></button>}<span className="context-count">{screen.panels.length} окон · {screen.panels.reduce((n,p)=>n+p.tabs.length,0)} вкладок</span></div><div className="context-hint"><span className="status-dot"/>Тяни ⠿ — перенос и обмен. ▣ — вписать. Колёсико над вкладками — горизонтальная прокрутка.</div>
       <div className="workspace-scroll-zone" title="Колёсико над всей панелью прокручивает рабочее поле" aria-label="Зона прокрутки рабочего поля колесом"><span aria-hidden="true">↕</span> Прокрутка рабочего поля — колёсико на всей панели</div>
     </div>

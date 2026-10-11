@@ -8,7 +8,7 @@
 | [contexts.ts](contexts.ts) | `ResourceRef`, `ContextTemplate`, `ContextInstance`, copy-by-default `instantiateContext`, контекстные ID вкладок, безопасный импорт legacy layout |
 | [safeStorage.ts](safeStorage.ts) | Неразрушающая запись после изменения; архивирование invalid raw bytes перед заменой по `pt006-recovery-original-v1:<key>` |
 | [contracts.ts](contracts.ts) | `WorkspaceProfile`, `ContentAddress` с необязательным `contextId`, `contextTemplateOptions`, `createContext`, `resolveContentAddress`, опциональные `compositionContextIds` / `prepareComparison` |
-| [WorkspaceShell.tsx](WorkspaceShell.tsx) | Экран/окно/вкладки, «+ Экран», «+ Контекст», «⇄ Композиция», атомарное размещение готового набора либо привязка Comparison к уже открытым источникам |
+| [WorkspaceShell.tsx](WorkspaceShell.tsx) | Полноширинная полоса Screen под шапкой (все вкладки видны, переносятся на новые строки), окна/вкладки, «+ Экран», «+ Контекст», «⇄ Композиция», атомарное размещение или привязка Comparison |
 | [windowDrag.ts](windowDrag.ts) | Drag/swap/fit с учётом препятствий и размеров |
 | [styles.css](styles.css) | Общий UI |
 
