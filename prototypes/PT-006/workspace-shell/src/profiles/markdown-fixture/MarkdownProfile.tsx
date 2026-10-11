@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from 'react'
 import type {WorkspaceProfile} from '../../shell/contracts.ts'
 import {parseScopedContentId} from '../../shell/contexts.ts'
+import {writePreservingInvalid,validStoredJson} from '../../shell/safeStorage.ts'
 import {DEFAULT_MARKDOWN, MARKDOWN_ID, MARKDOWN_STORE, MARKDOWN_LAYOUT,validMarkdownState,descriptorsForMarkdown,markdownTemplate,defaultMarkdownWorkspace,readMarkdown} from './model.ts'
 import type {MarkdownContext,MarkdownState} from './model.ts'
 
@@ -16,7 +17,12 @@ function restoreMarkdown():MarkdownState {
 export function useMarkdownProfile():WorkspaceProfile {
   const [state,setState]=useState<MarkdownState>(restoreMarkdown)
   const initialized=useRef(state)
-  useEffect(()=>{if(state!==initialized.current)localStorage.setItem(MARKDOWN_STORE,JSON.stringify(state))},[state])
+  useEffect(()=>{
+    if(state!==initialized.current){
+      writePreservingInvalid(MARKDOWN_STORE,JSON.stringify(state),validStoredJson(validMarkdownState))
+      initialized.current=state
+    }
+  },[state])
   const setDocument=(contextId:string,field:'title'|'body',value:string)=>{
     setState(prev=>({...prev,items:prev.items.map(item=>item.id===contextId?{
       ...item,document:{...item.document,[field]:value}
@@ -29,7 +35,7 @@ export function useMarkdownProfile():WorkspaceProfile {
     contextId:'workspace',
     contexts:['workspace'],
     descriptors:descriptorsForMarkdown(state.items),
-    initialWorkspace:defaultMarkdownWorkspace(),
+    initialWorkspace:defaultMarkdownWorkspace(state.items[0].id),
     layoutKey:()=>MARKDOWN_LAYOUT,
     legacyLayoutKey:()=>'', // No Architecture migration is permitted.
     migrateLayout:()=>null,

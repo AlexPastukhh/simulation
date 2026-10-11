@@ -1,6 +1,6 @@
 # src/profiles/architecture-simulator — предметный профиль
 
-**CURRENT / G-CODE-03.** Конкретная реализация симуляции архитектуры A/B поверх Shell. Не универсальный владелец механизмов Workspace. [Документация профиля](../../../docs/profiles/architecture-simulator/README.md).
+**CURRENT / G-CODE-04 + recovery hardening, 2026-10-11.** Конкретная реализация симуляции архитектуры A/B поверх Shell. Не универсальный владелец механизмов Workspace. [Документация профиля](../../../docs/profiles/architecture-simulator/README.md).
 
 | Файл | Реализованная роль |
 |---|---|

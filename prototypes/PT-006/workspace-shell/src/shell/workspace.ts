@@ -126,7 +126,7 @@ function renameScreen(w: Workspace, id: string, title: string): Workspace {
 }
 function addPanel(w: Workspace, screenId: string, panelId: string, rect?: Rect): Workspace {
   const s = screenOf(w, screenId)
-  if (!s || w.screens.some(screen => screen.panels.some(p => p.id === panelId))) return w
+  if (!s || w.screens.some(screen => screen.id === panelId || screen.panels.some(p => p.id === panelId))) return w
   const copy = clone(w)
   let placement: Rect = { x: 24, y: 24, w: 390, h: 330 }
   if (!rect) {
@@ -274,15 +274,22 @@ function validateWorkspace(value: unknown): value is Workspace {
   if (w.version !== 3 || !Array.isArray(w.screens) || !w.screens.length || typeof w.activeScreenId !== 'string') return false
   const ids = new Set<string>()
   for (const s of w.screens) {
-    if (!s || !Array.isArray(s.panels) || typeof s.id !== 'string' || typeof s.title !== 'string') return false
+    if (!s || !Array.isArray(s.panels) || typeof s.id !== 'string' || !s.id.trim() ||
+        typeof s.title !== 'string' || ids.has(s.id)) return false
+    ids.add(s.id)
+  }
+  for (const s of w.screens) {
     const counts: Partial<Record<ContentId, number>> = {}
     for (const p of s.panels) {
-      if (!p || ids.has(p.id) || !Array.isArray(p.tabs) || !p.rect ||
-          ![p.rect.x, p.rect.y, p.rect.w, p.rect.h].every(Number.isFinite)) return false
+      if (!p || typeof p.id !== 'string' || !p.id.trim() || ids.has(p.id) ||
+          !Array.isArray(p.tabs) || !p.rect ||
+          ![p.rect.x, p.rect.y, p.rect.w, p.rect.h].every(Number.isFinite) ||
+          p.rect.x < 0 || p.rect.y < 0 || p.rect.w < FRAME_MIN.w || p.rect.h < FRAME_MIN.h ||
+          (p.active !== null && (typeof p.active !== 'string' || !p.tabs.includes(p.active))) ||
+          new Set(p.tabs).size !== p.tabs.length) return false
       ids.add(p.id)
-      if (p.active !== null && !p.tabs.includes(p.active)) return false
       for (const kind of p.tabs) {
-        if (!CONTENT.some(d => d.id === kind)) return false
+        if (typeof kind !== 'string' || !CONTENT.some(d => d.id === kind)) return false
         counts[kind] = (counts[kind] ?? 0) + 1
         const max = getDescriptor(kind).maxPerScreen
         if (max !== null && counts[kind]! > max) return false

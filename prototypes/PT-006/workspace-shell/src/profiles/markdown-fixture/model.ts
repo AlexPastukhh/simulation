@@ -31,11 +31,11 @@ export function markdownTemplate(id:string):ScreenTemplate[] {
     rect:{x:24,y:28,w:770,h:590},tabs:[scopedContentId(id,'document')],active:scopedContentId(id,'document')
   }]}]
 }
-export function defaultMarkdownWorkspace():Workspace {
+export function defaultMarkdownWorkspace(contextId='M-1'):Workspace {
   return {version:3,activeScreenId:'markdown-screen-1',screens:[{
-    id:'markdown-screen-1',title:'Документ · M-1',panels:[{
+    id:'markdown-screen-1',title:'Документ · '+contextId,panels:[{
       id:'markdown-panel-1',rect:{x:24,y:28,w:770,h:590},
-      tabs:[scopedContentId('M-1','document')],active:scopedContentId('M-1','document')
+      tabs:[scopedContentId(contextId,'document')],active:scopedContentId(contextId,'document')
     }]
   }]}
 }

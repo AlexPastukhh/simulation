@@ -107,5 +107,5 @@ async function main(){
   if(errors.length)throw Error('Browser exceptions: '+errors.join('; '))
 }
 main().catch(e=>{console.error(e.stack);process.exitCode=1}).finally(()=>{
-  clearTimeout(timeout);try{ws?.close()}catch{};edge.kill();setTimeout(()=>fs.rmSync(userData,{recursive:true,force:true}),800).unref()
+  clearTimeout(timeout);try{ws?.close()}catch{};edge.kill();setTimeout(()=>{try{fs.rmSync(userData,{recursive:true,force:true})}catch{/* Edge may still release files after close */}},800).unref()
 })

@@ -89,7 +89,8 @@ async function main(){
     const saved=JSON.parse(localStorage.getItem('pt006-simulator-context-copies-v1'))
     assert(saved.version===1&&saved.items.length===1,'One persisted context copy')
     assert(saved.items[0].sourceId==='A','Clone provenance')
-    assert(JSON.stringify(saved.items[0].state)===JSON.stringify(JSON.parse(originalA)),'Clone copies A state independently')
+    const sourceA=originalA?JSON.parse(originalA):(await import('/src/profiles/architecture-simulator/content.ts')).initialData
+    assert(JSON.stringify(saved.items[0].state)===JSON.stringify(sourceA),'Clone copies A state independently')
     const createdId=saved.items[0].id
     assert(document.querySelectorAll('.screen-tab').length===12,'One template adds exactly four screens')
     assert([...document.querySelectorAll('.screen-tab')].filter(b=>b.textContent.includes(createdId)).length===4,'Screens belong to new context')
@@ -148,7 +149,9 @@ async function main(){
     assert(workspace.screens.length===13,'All 13 screens restored')
     assert(copies.items.length===2,'Copied Contexts preserved')
     const persistedSelection=copies.items[0].state.events.selectedId
-    assert(persistedSelection!==JSON.parse(localStorage.getItem('pt006-simulator-content-A-v6')).events.selectedId,'Independent edited clone survived reload')
+    const branchRaw=localStorage.getItem('pt006-simulator-content-A-v6')
+    const branchSource=branchRaw?JSON.parse(branchRaw):(await import('/src/profiles/architecture-simulator/content.ts')).initialData
+    assert(persistedSelection!==branchSource.events.selectedId,'Independent edited clone survived reload')
     assert(document.querySelectorAll('.screen-tab').length===13,'UI restores copied Contexts')
     assert(document.querySelector('textarea.context-notes')?.value==='Requirement R-1: independent planning notes','Minimal notes survive reload')
     assert(document.querySelector('.workspace-mode-switch'),'Mode persists')

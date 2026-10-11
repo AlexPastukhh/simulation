@@ -1,11 +1,12 @@
 # src/shell — код универсального Shell
 
-**CURRENT / G-CODE-03, 2026-10-11.** Shell содержит общую UI-компоновку, навигацию, механизм создания Context из предоставленного профилем шаблона и проверку адресов. Он **не** содержит типов `DemoStore`, `Actual Event` или `PlanRevision`.
+**CURRENT / G-CODE-04 + recovery hardening, 2026-10-11.** Shell содержит общую UI-компоновку, навигацию, механизм создания Context из предоставленного профилем шаблона и проверку адресов. Он **не** содержит типов `DemoStore`, `Actual Event` или `PlanRevision`.
 
 | Файл | Реализованная ответственность |
 |---|---|
 | [workspace.ts](workspace.ts) | Layout v3: Screen/Panel/Tab, generic add/duplicate, проверка экранных рецептов, поиск и переключение вкладок, геометрия |
 | [contexts.ts](contexts.ts) | `ResourceRef`, `ContextTemplate`, `ContextInstance`, copy-by-default `instantiateContext`, контекстные ID вкладок, безопасный импорт legacy layout |
+| [safeStorage.ts](safeStorage.ts) | Неразрушающая запись после изменения; архивирование invalid raw bytes перед заменой по `pt006-recovery-original-v1:<key>` |
 | [contracts.ts](contracts.ts) | `WorkspaceProfile`, `ContentAddress` с необязательным `contextId`, `contextTemplateOptions`, `createContext`, `resolveContentAddress`, опциональные `compositionContextIds` / `prepareComparison` |
 | [WorkspaceShell.tsx](WorkspaceShell.tsx) | Экран/окно/вкладки, «+ Экран», «+ Контекст», «⇄ Композиция», атомарное размещение готового набора либо привязка Comparison к уже открытым источникам |
 | [windowDrag.ts](windowDrag.ts) | Drag/swap/fit с учётом препятствий и размеров |

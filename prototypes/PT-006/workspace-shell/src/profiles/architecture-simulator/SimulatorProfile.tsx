@@ -17,6 +17,7 @@ import type { WorkspaceProfile, WorkspaceEvent, InspectorMode, InspectorActions 
 import { createComparisonScope, validateComparisonScope, comparisonDescriptor, comparisonScreens, parseScopeContentId } from './scope-mechanisms/comparison.ts'
 import type { ComparisonScope, ComparisonFocus } from './scope-mechanisms/comparison.ts'
 import { ComparisonScopeView } from './scope-mechanisms/ComparisonScopeView.tsx'
+import {writePreservingInvalid,validStoredJson} from '../../shell/safeStorage.ts'
 type Mutate = (fn: (draft: DemoStore) => void) => void
 type Inspector = { kind: ContentKind; mode: InspectorMode; contextId?: string } | null
 const STORAGE_DATA_A = 'pt006-simulator-content-A-v6'
@@ -27,23 +28,30 @@ const STORAGE_COMPARISON_SCOPES='pt006-simulator-comparison-scopes-v1'
 type NotesState={notes:string}
 type SavedContext = { id: string; title: string; templateId: string; sourceId: string; state: DemoStore | NotesState }
 const NOTES_DESCRIPTOR={id:'notes',label:'Требования / заметки',caption:'Минимальный Context без подготовленной истории',icon:'▤',minWidth:340,minHeight:300,maxPerScreen:1,accent:'#55c4ad'}
-function restoreContextCopies(): Record<string,SavedContext> {
-  try {
-    const parsed:unknown=JSON.parse(localStorage.getItem(STORAGE_CONTEXT_COPIES)??'null')
-    if(!parsed||typeof parsed!=='object'||(parsed as {version?:number}).version!==1)return {}
-    const values=(parsed as {items?:unknown}).items
-    if(!Array.isArray(values))return {}
-    const result:Record<string,SavedContext>={}
-    for(const entry of values){
-      const value=entry as Partial<SavedContext>
-      if(!value||typeof value.id!=='string'||!/^C-[a-f0-9-]{36}$/.test(value.id)||typeof value.title!=='string'||
-         typeof value.templateId!=='string'||typeof value.sourceId!=='string'||!value.state||
-         !(value.templateId==='architecture-evolution'?validateDemo(value.state):
-           value.templateId==='minimal-planning'&&value.state&&typeof (value.state as NotesState).notes==='string')||result[value.id])return {}
-      result[value.id]={id:value.id,title:value.title,templateId:value.templateId,sourceId:value.sourceId,state:value.state}
+function parseCopies(raw:string|null):{values:Record<string,SavedContext>;valid:boolean} {
+  const values:Record<string,SavedContext>={}
+  if(raw===null)return {values,valid:true}
+  let parsed:unknown
+  try{parsed=JSON.parse(raw)}catch{return {values,valid:false}}
+  if(!parsed||typeof parsed!=='object'||(parsed as {version?:number}).version!==1||
+     !Array.isArray((parsed as {items?:unknown}).items))return {values,valid:false}
+  let valid=true
+  for(const entry of (parsed as {items:unknown[]}).items){
+    const item=entry as Partial<SavedContext>|null
+    if(!item||typeof item.id!=='string'||!/^C-[a-f0-9-]{36}$/.test(item.id)||
+       typeof item.title!=='string'||typeof item.templateId!=='string'||typeof item.sourceId!=='string'||
+       !(item.templateId==='architecture-evolution'?validateDemo(item.state):
+         item.templateId==='minimal-planning'&&!!item.state&&typeof (item.state as NotesState).notes==='string')||values[item.id]){
+      valid=false
+      continue
     }
-    return result
-  }catch{return {}}
+    values[item.id]=item as SavedContext
+  }
+  return {values,valid}
+}
+function restoreContextCopies():Record<string,SavedContext>{
+  try{return parseCopies(localStorage.getItem(STORAGE_CONTEXT_COPIES)).values}
+  catch{return {}}
 }
 const architectureContextTemplate: ContextTemplate<DemoStore> = {
   id:'architecture-evolution',profileId:'architecture-simulator',title:'Эволюция архитектуры',seed:initialData,
@@ -111,25 +119,51 @@ export function useSimulatorProfile(): WorkspaceProfile & { shared: WorkspacePro
     B: restore(STORAGE_DATA_B, ['pt006-simulator-content-B-v5', 'pt006-simulator-content-B-v4', 'pt006-simulator-content-B-v3'], initialDataB, validateDemo, value => migrateLegacyDemo(value, initialDataB), value => migrateLegacyDemo(value, initialDataB) ?? value),
   }))
   const [contextCopies,setContextCopies]=useState<Record<string,SavedContext>>(restoreContextCopies)
-  const [scopes,setScopes]=useState<Record<string,ComparisonScope>>(()=>{
+  const resolveForScopes=(id:string):DemoStore|null=>id==='A'||id==='B'?branchData[id]:
+    (contextCopies[id]?.templateId==='architecture-evolution'?contextCopies[id].state as DemoStore:null)
+  const parseScopes=(raw:string|null):{values:Record<string,ComparisonScope>;valid:boolean}=>{
+    const values:Record<string,ComparisonScope>={}
+    if(raw===null)return {values,valid:true}
     try {
-      const parsed:unknown=JSON.parse(localStorage.getItem(STORAGE_COMPARISON_SCOPES)??'null')
-      if(!parsed||typeof parsed!=='object'||(parsed as {version?:number}).version!==1)return {}
-      const items=(parsed as {items?:unknown}).items
-      if(!Array.isArray(items))return {}
-      const resolve=(id:string):DemoStore|null =>id==='A'||id==='B'?branchData[id]:(contextCopies[id]?.templateId==='architecture-evolution'?contextCopies[id].state as DemoStore:null)
-      const loaded:Record<string,ComparisonScope>={}
-      for(const item of items){if(!validateComparisonScope(item,resolve)||loaded[item.id])return {};loaded[item.id]=item}
-      return loaded
-    }catch{return {}}
+      const parsed:unknown=JSON.parse(raw)
+      if(!parsed||typeof parsed!=='object'||(parsed as {version?:number}).version!==1||
+         !Array.isArray((parsed as {items?:unknown}).items))return {values,valid:false}
+      let valid=true
+      for(const item of (parsed as {items:unknown[]}).items){
+        if(!validateComparisonScope(item,resolveForScopes)||values[item.id]){valid=false;continue}
+        values[item.id]=item
+      }
+      return {values,valid}
+    }catch{return {values,valid:false}}
+  }
+  const [scopes,setScopes]=useState<Record<string,ComparisonScope>>(()=>{
+    try{return parseScopes(localStorage.getItem(STORAGE_COMPARISON_SCOPES)).values}
+    catch{return {}}
   })
-  const initialScopes=useRef(scopes)
-  useEffect(()=>{if(scopes!==initialScopes.current)localStorage.setItem(STORAGE_COMPARISON_SCOPES,JSON.stringify({version:1,items:Object.values(scopes)}))},[scopes])
+  const previousScopes=useRef(scopes)
+  useEffect(()=>{
+    if(scopes!==previousScopes.current){
+      writePreservingInvalid(STORAGE_COMPARISON_SCOPES,JSON.stringify({version:1,items:Object.values(scopes)}),
+        raw=>parseScopes(raw).valid)
+      previousScopes.current=scopes
+    }
+  },[scopes])
   const [inspector, setInspector] = useState<Inspector>(null)
-  const initialCopies=useRef(contextCopies)
-  // A damaged persisted registry is never silently overwritten during hydration.
-  useEffect(()=>{if(contextCopies!==initialCopies.current)localStorage.setItem(STORAGE_CONTEXT_COPIES,JSON.stringify({version:1,items:Object.values(contextCopies)}))},[contextCopies])
-  useEffect(() => { localStorage.setItem(STORAGE_DATA_A, stringify(branchData.A)); localStorage.setItem(STORAGE_DATA_B, stringify(branchData.B)) }, [branchData])
+  const previousCopies=useRef(contextCopies)
+  useEffect(()=>{
+    if(contextCopies!==previousCopies.current){
+      writePreservingInvalid(STORAGE_CONTEXT_COPIES,JSON.stringify({version:1,items:Object.values(contextCopies)}),
+        raw=>parseCopies(raw).valid)
+      previousCopies.current=contextCopies
+    }
+  },[contextCopies])
+  const previousBranches=useRef(branchData)
+  useEffect(()=>{
+    const previous=previousBranches.current
+    if(branchData.A!==previous.A)writePreservingInvalid(STORAGE_DATA_A,stringify(branchData.A),validStoredJson(validateDemo))
+    if(branchData.B!==previous.B)writePreservingInvalid(STORAGE_DATA_B,stringify(branchData.B),validStoredJson(validateDemo))
+    previousBranches.current=branchData
+  },[branchData])
   const setData = (fn: (previous: DemoStore) => DemoStore) =>
     setBranchData(prev => ({ ...prev, [branch]: fn(prev[branch]) }))
   const mutate: Mutate = fn => setData(prev => { const next = structuredClone(prev); fn(next); return next })

@@ -4,6 +4,7 @@ import { createWorkspaceModel } from './workspace.ts'
 import type { Panel, Rect, Workspace, ContentDescriptor } from './workspace.ts'
 import type { WorkspaceEvent, WorkspaceProfile } from './contracts.ts'
 import { useWindowDrag } from './windowDrag.ts'
+import { writePreservingInvalid, validStoredJson } from './safeStorage.ts'
 
 const SETTINGS_KEY = 'pt006-workspace-settings-v1'
 const VIEW_KEY = 'workspace-shell-view-mode-v1'
@@ -170,7 +171,16 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
     return ()=>zone.removeEventListener('wheel',wheel)
   },[])
   const modify=(fn:(w:Workspace)=>Workspace)=>setLayouts(prev=>({...prev,[profile.contextId]:fn(prev[profile.contextId] ?? profile.initialWorkspace)}))
-  useEffect(()=>{for(const [context,layout] of Object.entries(layouts))localStorage.setItem(profile.layoutKey(context),JSON.stringify(layout,null,2))},[layouts,profile.id])
+  // Hydration is read-only. Save only a layout changed by a user's Workspace action;
+  // even a malformed saved layout is retained in a recovery slot before replacement.
+  const previousLayouts=useRef(layouts)
+  useEffect(()=>{
+    const previous=previousLayouts.current
+    for(const [context,layout] of Object.entries(layouts)){
+      if(layout!==previous[context])writePreservingInvalid(profile.layoutKey(context),JSON.stringify(layout,null,2),validStoredJson(ops.validateWorkspace))
+    }
+    previousLayouts.current=layouts
+  },[layouts,profile.id])
   useEffect(()=>{localStorage.setItem(SETTINGS_KEY,String(fitGap))},[fitGap])
   useEffect(()=>{localStorage.setItem(VIEW_KEY,viewMode?'1':'0')},[viewMode])
   useEffect(()=>{

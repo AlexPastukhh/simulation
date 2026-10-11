@@ -39,6 +39,7 @@ src/
 │   ├── workspace.ts               # layout/screens/panels/tabs
 │   ├── contexts.ts                # Context/ResourceRef/Template и адреса
 │   ├── resourceProviders.ts       # read-only контракт ресурсов разных профилей
+│   ├── safeStorage.ts             # guard и архив невалидных сохранений перед заменой
 │   ├── WorkspaceShell.tsx
 │   └── windowDrag.ts
 └── profiles/
@@ -76,6 +77,8 @@ tests/                              # unit и UI-smoke
 **Старый режим A/B** сохраняет `pt006-simulator-layout-[A|B]-v3` и `pt006-simulator-content-[A|B]-v6`. **Общий Workspace** имеет новый ключ layout и отдельное хранилище копий, не удаляя старые A/B данные. В старом режиме исторический Comparison читает A/B напрямую; в общем Workspace новый read-only Scope Comparison использует **явные привязки двух Context**. Готовый путь создаёт экран целиком, ручной связывает уже открытые Architecture без изменений источников. Открытие вкладки или выбор Plan Step не создаёт фактических событий.
 
 ## Статус и история решений
+
+- **CURRENT / recovery hardening (2026-10-11):** загрузка A/B, Markdown, Layout, Context и Scope больше не перезаписывает прежние записи при открытии. При редактировании невалидные исходные bytes архивируются под `pt006-recovery-original-v1:<key>` до записи. Исправлено восстановление Markdown при отсутствии M-1, усилен `validateWorkspace`, валидные Context/Scope восстанавливаются отдельно от битых. **106 unit-тестов, build/lint и пять Edge smoke** с негативными сценариями, включая контроль неизменности A/B. Подробнее — [правила восстановления](docs/workspace/README.md).
 
 - **CURRENT / G-CODE-04 (2026-10-11):** второй Markdown Fixture Profile, отдельные Context и сохранение без History, read-only контракты двух профилей. **101/101 unit**, build/lint, все 4 Edge UI smoke (legacy, Context, Scope, Markdown), подтверждена неизменность A/B. Межпрофильные окна одновременно **не реализованы**.
 - **HISTORICAL / G-CODE-03 (2026-10-11):** **97/97 unit**, build, lint и три Edge smoke (старые раскладки, Context Instances, Scope Comparison). Проверены read-only bindings, готовая A+B и ручная сборка, отказ несовместимой/одинаковой паре, сохранение Scope после reload и неизменность фактических State A/B.
