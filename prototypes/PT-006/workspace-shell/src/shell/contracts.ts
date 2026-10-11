@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { ContentDescriptor, Workspace } from './workspace.ts'
+import type { ContentDescriptor, Workspace, ScreenTemplate, ScreenTemplateBundle } from './workspace.ts'
 
 export type ContentAddress = { profileId: string; instanceId: string }
 export type WorkspaceEvent = { type: 'open-content'; target: ContentAddress }
@@ -16,6 +16,8 @@ export type WorkspaceProfile = {
   subtitle: string
   descriptors: ContentDescriptor[]
   initialWorkspace: Workspace
+  screenTemplates?: ScreenTemplate[]
+  screenBundles?: ScreenTemplateBundle[]
   contextId: string
   contexts: string[]
   layoutKey: (contextId: string) => string

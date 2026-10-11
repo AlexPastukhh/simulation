@@ -1,10 +1,10 @@
 # Профили — подключаемое содержимое Workspace
 
-**CURRENT / опубликованный Git `main`, с пометками о локальной неопубликованной итерации.** Профиль предоставляет Shell описание содержимого, рендеринг и предметное поведение. Это **не** самостоятельный рабочий Workspace. В текущем прототипе подключён только [Architecture Simulator](architecture-simulator/README.md).
+**CURRENT / версия PT-006 после интеграции экранных механизмов.** Профиль предоставляет Shell описание содержимого, рендеринг и предметное поведение. Это **не** самостоятельный рабочий Workspace. В текущем прототипе подключён только [Architecture Simulator](architecture-simulator/README.md).
 
 ## Реальный контракт подключения
 
-[src/shell/contracts.ts](../../src/shell/contracts.ts) определяет `WorkspaceProfile`. В нём профиль сообщает `id`, `title`, `descriptors`, `initialWorkspace`, `contextId`, `contexts`, ключи локального layout, обработчики миграции, `renderContent`, `renderPanelTools`, инспектор и профильные команды. В **локальных неопубликованных правках** к этому контракту добавлены опциональные `screenTemplates` и `screenBundles`: это рецепты **раскладок экранов**, не самостоятельные предметные контексты. В опубликованном `main` этих полей и меню пока нет.
+[src/shell/contracts.ts](../../src/shell/contracts.ts) определяет `WorkspaceProfile`. В нём профиль сообщает `id`, `title`, `descriptors`, `initialWorkspace`, `contextId`, `contexts`, ключи локального layout, обработчики миграции, `renderContent`, `renderPanelTools`, инспектор и профильные команды. Контракт также допускает опциональные `screenTemplates` и `screenBundles` — описания **раскладок экранов**, не самостоятельных предметных контекстов. Architecture Simulator хранит их как подготовленные рецепты, но **не регистрирует их для меню «+ Экран»**. Для запуска единого Context Template потребуется отдельный следующий этап.
 
 [src/App.tsx](../../src/App.tsx) вызывает `useSimulatorProfile()` и передаёт результат в `WorkspaceShell`. Это **один активный профиль**, а не система динамического подключения множества провайдеров.
 

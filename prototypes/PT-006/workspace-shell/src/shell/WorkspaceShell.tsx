@@ -132,6 +132,7 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
   const [renameValue,setRenameValue]=useState('')
   const [fitArmed,setFitArmed]=useState<string|null>(null)
   const [settingsOpen,setSettingsOpen]=useState(false)
+  const [screenMenu,setScreenMenu]=useState<{left:number}|null>(null)
   const [fitGap,setFitGap]=useState(restoreGap)
   const [viewMode,setViewMode]=useState(()=>{try{return localStorage.getItem(VIEW_KEY)==='1'}catch{return false}})
   const [flashes,setFlashes]=useState<Record<string,number>>({})
@@ -168,7 +169,18 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
   useEffect(()=>{for(const [context,layout] of Object.entries(layouts))localStorage.setItem(profile.layoutKey(context),JSON.stringify(layout,null,2))},[layouts,profile.id])
   useEffect(()=>{localStorage.setItem(SETTINGS_KEY,String(fitGap))},[fitGap])
   useEffect(()=>{localStorage.setItem(VIEW_KEY,viewMode?'1':'0')},[viewMode])
-  useEffect(()=>{setFocused(null);setPicker(null);setFitArmed(null);setRename(false);profile.onContextChanged?.()},[profile.contextId])
+  useEffect(()=>{
+    if(!screenMenu)return
+    const dismiss=(event:PointerEvent)=>{
+      const target=event.target
+      if(target instanceof Element&&!target.closest('.screen-create-menu, .new-screen'))setScreenMenu(null)
+    }
+    const escape=(event:KeyboardEvent)=>{if(event.key==='Escape')setScreenMenu(null)}
+    window.addEventListener('pointerdown',dismiss)
+    window.addEventListener('keydown',escape)
+    return ()=>{window.removeEventListener('pointerdown',dismiss);window.removeEventListener('keydown',escape)}
+  },[screenMenu])
+  useEffect(()=>{setFocused(null);setPicker(null);setFitArmed(null);setRename(false);setScreenMenu(null);profile.onContextChanged?.()},[profile.contextId])
   const {startDrag,hovered,ghost,notice,setNotice,draggedId,previewRect}=useWindowDrag({
     screen,workspace,board,stage,armedPanelId:fitArmed,fitGap,onFitted:()=>setFitArmed(null),update:modify,
   })
@@ -212,6 +224,21 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
     const stop=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',stop);window.removeEventListener('pointercancel',stop)}
     window.addEventListener('pointermove',move);window.addEventListener('pointerup',stop);window.addEventListener('pointercancel',stop)
   }
+  const screenId= (kind:'screen'|'panel') => (kind==='screen'?'screen-':'w-')+crypto.randomUUID()
+  const finishNewScreen=(next:Workspace|null)=>{
+    setScreenMenu(null)
+    if(!next){setNotice('Экран не создан: проверьте содержимое и ограничения шаблона');return}
+    modify(()=>next)
+    setPicker(null);setFocused(null);setFitArmed(null);setNotice(null)
+  }
+  const addBlankScreen=()=>finishNewScreen(ops.addScreen(workspace,screenId('screen')))
+  const copyCurrentScreen=()=>finishNewScreen(ops.duplicateScreen(workspace,screen.id,screenId))
+  const toggleScreenMenu=(button:HTMLButtonElement)=>{
+    if(screenMenu){setScreenMenu(null);return}
+    const bounds=button.getBoundingClientRect()
+    setScreenMenu({left:Math.max(12,Math.min(bounds.left,window.innerWidth-344))})
+    setSettingsOpen(false)
+  }
   const reset=()=>{if(window.confirm('Сбросить Workspace и данные текущего профиля?')){modify(()=>structuredClone(profile.initialWorkspace));profile.resetContent();setPicker(null);setFitArmed(null);setNotice(null)}}
   const selectScreen=(id:string)=>{modify(w=>ops.activateScreen(w,id));setFocused(null);setPicker(null);setFitArmed(null);setRename(false)}
   const boardWidth=Math.max(1265,...screen.panels.map(p=>p.rect.x+p.rect.w+45))+(ghost?1800:0)
@@ -223,8 +250,13 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
       {profile.renderHeader()}
       <nav className="screen-tabs" aria-label="Экраны">
         {workspace.screens.map(s=><div className="screen-tab-wrap" key={s.id}><button className={s.id===screen.id?'screen-tab current':'screen-tab'} onClick={()=>selectScreen(s.id)}>{s.title}</button>{workspace.screens.length>1&&<button title={'Закрыть экран '+s.title} aria-label={'Закрыть экран '+s.title} className="screen-close" onClick={()=>{modify(w=>ops.removeScreen(w,s.id));setPicker(null);setFocused(null)}}>×</button>}</div>)}
-        <button className="new-screen" onClick={()=>{modify(w=>ops.addScreen(w,'screen-'+crypto.randomUUID()));setPicker(null)}} title="Новый экран">+ Экран</button>
+        <button className="new-screen" onClick={e=>toggleScreenMenu(e.currentTarget)} aria-expanded={Boolean(screenMenu)} aria-haspopup="dialog" aria-controls="screen-create-menu" title="Создать экран">+ Экран ▾</button>
       </nav>
+      {screenMenu&&<section className="screen-create-menu" id="screen-create-menu" role="dialog" aria-label="Создать экран" style={{left:screenMenu.left}}>
+        <div className="screen-create-title"><strong>Создать экран</strong><button aria-label="Закрыть выбор экрана" onClick={()=>setScreenMenu(null)}>×</button></div>
+        <button className="screen-create-option" onClick={addBlankScreen}><strong>＋ Пустой экран</strong><small>Создать рабочую область без окон</small></button>
+        <button className="screen-create-option" onClick={copyCurrentScreen}><strong>⧉ Копия текущего</strong><small>Копирует окна и расположение, данные остаются общими</small></button>
+      </section>}
       <div className="header-actions">
         <button className="header-btn" onClick={()=>createWindow()}>+ Окно</button>
         <button className="header-btn highlighted" onClick={()=>profile.openInspector(profile.descriptors[0]?.id??'','schema')}>▦ Каталог / инспектор</button>

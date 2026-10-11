@@ -1,5 +1,5 @@
 import { createWorkspaceModel } from '../../shell/workspace.ts'
-import type { Workspace, ContentDescriptor } from '../../shell/workspace.ts'
+import type { Workspace, ContentDescriptor, ScreenTemplate, ScreenTemplateBundle } from '../../shell/workspace.ts'
 export type { Rect, Panel, Screen, Workspace, ContentDescriptor } from '../../shell/workspace.ts'
 export type ContentKind = 'events' | 'plan' | 'requirements' | 'architecture' | 'impact' | 'implementation' | 'fitness' | 'work' | 'scenario' | 'current' | 'architecturePlan' | 'forecasts' | 'axes' | 'hotpaths' | 'explorer' | 'comparison' | 'trace' | 'impactHistory'
 
@@ -25,30 +25,52 @@ export const CONTENT: ContentDescriptor[] = [
   { id: 'trace', label: 'Requirement / Implementation Trace', caption: 'Связи потребностей с архитектурой и файлами', icon: '⌘', minWidth: 410, minHeight: 360, maxPerScreen: 1, accent: '#a48cce' },
   { id: 'impactHistory', label: 'Impact History / Future', caption: 'Фактические изменения CURRENT и плановые влияния по цели', icon: '↶', minWidth: 390, minHeight: 350, maxPerScreen: 1, accent: '#d1a76f' },
 ]
+/** Recommended task-oriented start layout: every kind is visible once.
+ * Window placement is not data ownership; custom saved layouts remain untouched. */
 export const INITIAL_WORKSPACE: Workspace = {
   version: 3, activeScreenId: 'screen-1', screens: [
-    { id: 'screen-1', title: 'Обзор', panels: [
-      { id: 'panel-1', rect: { x: 22, y: 28, w: 350, h: 745 }, tabs: ['plan'], active: 'plan' },
-      { id: 'panel-2', rect: { x: 388, y: 28, w: 510, h: 355 }, tabs: ['requirements', 'architecture'], active: 'requirements' },
-      { id: 'panel-3', rect: { x: 914, y: 28, w: 330, h: 745 }, tabs: ['events'], active: 'events' },
-      { id: 'panel-4', rect: { x: 388, y: 399, w: 510, h: 350 }, tabs: ['fitness', 'impact'], active: 'fitness' },
+    { id: 'screen-1', title: 'История и факты', panels: [
+      { id: 'panel-1', rect: { x: 20, y: 26, w: 335, h: 760 }, tabs: ['events'], active: 'events' },
+      { id: 'panel-2', rect: { x: 373, y: 26, w: 420, h: 375 }, tabs: ['current'], active: 'current' },
+      { id: 'panel-3', rect: { x: 373, y: 417, w: 420, h: 354 }, tabs: ['requirements'], active: 'requirements' },
+      { id: 'panel-4', rect: { x: 810, y: 26, w: 430, h: 385 }, tabs: ['explorer'], active: 'explorer' },
+      { id: 'panel-5', rect: { x: 810, y: 430, w: 430, h: 341 }, tabs: ['scenario'], active: 'scenario' },
     ]},
-    { id: 'screen-2', title: 'Разбор изменений', panels: [
-      { id: 'panel-5', rect: { x: 24, y: 28, w: 565, h: 480 }, tabs: ['architecture', 'implementation'], active: 'architecture' },
-      { id: 'panel-6', rect: { x: 605, y: 28, w: 580, h: 480 }, tabs: ['impact', 'work'], active: 'impact' },
+    { id: 'screen-2', title: 'Архитектура и реализация', panels: [
+      { id: 'panel-6', rect: { x: 20, y: 26, w: 607, h: 415 }, tabs: ['architecture'], active: 'architecture' },
+      { id: 'panel-7', rect: { x: 645, y: 26, w: 610, h: 415 }, tabs: ['implementation'], active: 'implementation' },
+      { id: 'panel-8', rect: { x: 20, y: 462, w: 607, h: 372 }, tabs: ['trace'], active: 'trace' },
+      { id: 'panel-9', rect: { x: 645, y: 462, w: 610, h: 372 }, tabs: ['impactHistory'], active: 'impactHistory' },
     ]},
-    { id: 'screen-3', title: 'Факты и связи', panels: [
-      { id: 'panel-7', rect: { x: 20, y: 26, w: 400, h: 615 }, tabs: ['current', 'scenario'], active: 'current' },
-      { id: 'panel-8', rect: { x: 436, y: 26, w: 415, h: 615 }, tabs: ['explorer', 'comparison'], active: 'explorer' },
-      { id: 'panel-9', rect: { x: 868, y: 26, w: 405, h: 615 }, tabs: ['trace', 'hotpaths'], active: 'trace' },
+    { id: 'screen-3', title: 'Планирование', panels: [
+      { id: 'panel-10', rect: { x: 20, y: 26, w: 365, h: 812 }, tabs: ['plan'], active: 'plan' },
+      { id: 'panel-11', rect: { x: 390, y: 26, w: 450, h: 390 }, tabs: ['architecturePlan'], active: 'architecturePlan' },
+      { id: 'panel-12', rect: { x: 390, y: 435, w: 450, h: 390 }, tabs: ['impact'], active: 'impact' },
+      { id: 'panel-13', rect: { x: 857, y: 26, w: 405, h: 390 }, tabs: ['forecasts'], active: 'forecasts' },
+      { id: 'panel-14', rect: { x: 857, y: 435, w: 405, h: 390 }, tabs: ['axes'], active: 'axes' },
     ]},
-    { id: 'screen-4', title: 'План и прогнозы', panels: [
-      { id: 'panel-10', rect: { x: 20, y: 26, w: 430, h: 630 }, tabs: ['architecturePlan'], active: 'architecturePlan' },
-      { id: 'panel-11', rect: { x: 466, y: 26, w: 412, h: 630 }, tabs: ['forecasts', 'axes'], active: 'forecasts' },
-      { id: 'panel-12', rect: { x: 895, y: 26, w: 380, h: 630 }, tabs: ['impactHistory'], active: 'impactHistory' },
+    { id: 'screen-4', title: 'Результаты и сравнение', panels: [
+      { id: 'panel-15', rect: { x: 20, y: 26, w: 602, h: 392 }, tabs: ['work'], active: 'work' },
+      { id: 'panel-16', rect: { x: 20, y: 438, w: 602, h: 355 }, tabs: ['hotpaths'], active: 'hotpaths' },
+      { id: 'panel-17', rect: { x: 640, y: 26, w: 607, h: 380 }, tabs: ['fitness'], active: 'fitness' },
+      { id: 'panel-18', rect: { x: 640, y: 426, w: 607, h: 385 }, tabs: ['comparison'], active: 'comparison' },
     ]},
   ],
 }
+
+/** Profile-supplied screen recipes; Shell sees only generic content IDs/rectangles. */
+export const SCREEN_TEMPLATES: ScreenTemplate[] = INITIAL_WORKSPACE.screens.map((screen,index)=>({
+  id: ['history-facts','architecture-implementation','planning','outcomes-comparison'][index],
+  title: screen.title,
+  description: ['События, известные требования и текущий срез','Архитектура, файлы, трассировка и история','План, целевая архитектура, воздействия и прогнозы','Работа, наблюдения, оценки и A/B'][index],
+  panels: screen.panels.map(({rect,tabs,active})=>({rect:{...rect},tabs:[...tabs],active})),
+}))
+export const SCREEN_BUNDLES: ScreenTemplateBundle[] = [{
+  id: 'architecture-workflow',
+  title: 'Четыре экрана симулятора',
+  description: 'История → Структура → Планирование → Результаты',
+  templateIds: SCREEN_TEMPLATES.map(t=>t.id),
+}]
 
 export const {currentScreen,countContent,canAddContent,addScreen,removeScreen,activateScreen,renameScreen,addPanel,removePanel,addContent,removeContent,activateContent,changeRect,swapPanels,findFreeFitRect,undersized,validateWorkspace,getDescriptor} = createWorkspaceModel(CONTENT)
 /** Old generic demo tabs are not simulation facts; preserve geometry, clear tab placements. */

@@ -46,3 +46,13 @@
 .context-bar{position:relative;padding-bottom:20px}
 .workspace-scroll-zone{position:absolute;bottom:0;left:0;right:0;height:18px;display:flex;align-items:center;justify-content:center;gap:7px;z-index:1;border-top:1px solid #29415e;background:#17273d;color:#8eaacb;font-size:10px;line-height:1;letter-spacing:.035em;cursor:ns-resize;user-select:none;overscroll-behavior:contain}
 .workspace-scroll-zone:hover{background:#274362;color:#f0f6ff}
+
+/* Generic screen creation chooser: profile templates supply data, Shell owns actions. */
+.screen-create-menu{position:fixed;top:65px;width:330px;max-height:min(660px,calc(100vh - 85px));overflow-y:auto;z-index:65;border:1px solid #536e99;border-radius:13px;background:#152641;color:#ecf3ff;box-shadow:0 18px 52px #000a;padding:9px;white-space:normal}
+.screen-create-title{display:flex;align-items:center;justify-content:space-between;padding:5px 7px 10px;font-size:14px}
+.screen-create-title button{background:#293f5d;border:0;border-radius:5px;color:#e3edfe;font-size:18px;width:25px;height:25px}
+.screen-create-group{font-size:10px;font-weight:800;letter-spacing:.11em;color:#91add1;padding:14px 9px 7px;border-top:1px solid #324866;margin-top:5px}
+.screen-create-option{border:0;border-radius:8px;background:transparent;color:#e9f3ff;display:flex;flex-direction:column;text-align:left;gap:5px;padding:10px 11px;width:100%;white-space:normal}
+.screen-create-option strong{font-size:12px}.screen-create-option small{font-size:11px;color:#aebfda;line-height:1.35}
+.screen-create-option:hover,.screen-create-option:focus-visible{background:#294668}
+.screen-create-bundle{background:#21466a;border:1px solid #4d769f}

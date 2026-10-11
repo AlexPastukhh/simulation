@@ -3,6 +3,20 @@ export type Rect = { x: number; y: number; w: number; h: number }
 export type Panel = { id: string; rect: Rect; tabs: ContentId[]; active: ContentId | null }
 export type Screen = { id: string; title: string; panels: Panel[] }
 export type Workspace = { version: 3; activeScreenId: string; screens: Screen[] }
+/** Templates describe placements, not copies of any profile's content data. */
+export type ScreenTemplate = {
+  id: string
+  title: string
+  description?: string
+  panels: { rect: Rect; tabs: ContentId[]; active: ContentId | null }[]
+}
+export type ScreenTemplateBundle = {
+  id: string
+  title: string
+  description?: string
+  templateIds: string[]
+}
+export type NewWorkspaceId = (kind: 'screen' | 'panel') => string
 export type ContentDescriptor = { id: ContentId; label: string; caption: string; icon: string; minWidth: number; minHeight: number; maxPerScreen: number | null; accent: string }
 export const FRAME_MIN = { w: 190, h: 156 }
 export function createWorkspaceModel(CONTENT: readonly ContentDescriptor[]) {
@@ -30,6 +44,67 @@ function addScreen(w: Workspace, id: string, title?: string): Workspace {
   const copy = clone(w)
   copy.screens.push({ id, title: title || 'Экран ' + (w.screens.length + 1), panels: [] })
   copy.activeScreenId = id
+  return copy
+}
+/** Copy only window composition: the same content IDs still address the same profile data. */
+function duplicateScreen(w: Workspace, sourceId: string, makeId: NewWorkspaceId): Workspace | null {
+  const source=screenOf(w,sourceId)
+  if(!source) return null
+  const copy=clone(w), known=new Set([...w.screens.map(s=>s.id),...w.screens.flatMap(s=>s.panels.map(p=>p.id))])
+  const next=(kind:'screen'|'panel')=>{
+    const id=makeId(kind)
+    if(!id||known.has(id)) return null
+    known.add(id)
+    return id
+  }
+  const id=next('screen')
+  if(!id) return null
+  const panels: Panel[]=[]
+  for(const p of source.panels){
+    const panelId=next('panel')
+    if(!panelId)return null
+    panels.push({...structuredClone(p),id:panelId})
+  }
+  copy.screens.push({id,title:source.title+' — копия',panels})
+  copy.activeScreenId=id
+  return copy
+}
+/** All-or-nothing addition of profile-provided screens. Reject invalid references
+ * and dimensions before touching the user's existing screens. */
+function addScreensFromTemplates(w:Workspace, templates:readonly ScreenTemplate[],makeId:NewWorkspaceId):Workspace|null {
+  if(!templates.length)return null
+  const copy=clone(w), known=new Set([...w.screens.map(s=>s.id),...w.screens.flatMap(s=>s.panels.map(p=>p.id))])
+  const next=(kind:'screen'|'panel')=>{
+    const id=makeId(kind)
+    if(!id||known.has(id))return null
+    known.add(id)
+    return id
+  }
+  let firstId:string|null=null
+  for(const template of templates){
+    if(!template||typeof template.id!=='string'||!template.id.trim()||typeof template.title!=='string'||!template.title.trim()||!Array.isArray(template.panels))return null
+    const screenId=next('screen')
+    if(!screenId)return null
+    const counts=new Map<string,number>(), panels:Panel[]=[]
+    for(const p of template.panels){
+      if(!p||!Array.isArray(p.tabs)||!p.rect||![p.rect.x,p.rect.y,p.rect.w,p.rect.h].every(Number.isFinite)||
+         p.rect.x<0||p.rect.y<0||p.rect.w<FRAME_MIN.w||p.rect.h<FRAME_MIN.h||
+         (p.active!==null&&!p.tabs.includes(p.active))||new Set(p.tabs).size!==p.tabs.length)return null
+      for(const kind of p.tabs){
+        const descriptor=CONTENT.find(d=>d.id===kind)
+        if(!descriptor||p.rect.w<descriptor.minWidth||p.rect.h<descriptor.minHeight)return null
+        const count=(counts.get(kind)??0)+1
+        if(descriptor.maxPerScreen!==null&&count>descriptor.maxPerScreen)return null
+        counts.set(kind,count)
+      }
+      const id=next('panel')
+      if(!id)return null
+      panels.push({id,rect:{...p.rect},tabs:[...p.tabs],active:p.active})
+    }
+    copy.screens.push({id:screenId,title:template.title,panels})
+    firstId??=screenId
+  }
+  copy.activeScreenId=firstId!
   return copy
 }
 function removeScreen(w: Workspace, id: string): Workspace {
@@ -238,5 +313,5 @@ function validateWorkspace(value: unknown): value is Workspace {
     return { workspace: created, screenId, panelId: newPanelId, created: true }
   }
 
-  return {getDescriptor, currentScreen, countContent, canAddContent, addScreen, removeScreen, activateScreen, renameScreen, addPanel, removePanel, addContent, removeContent, activateContent, changeRect, swapPanels, findFreeFitRect, undersized, validateWorkspace, openContent}
+  return {getDescriptor, currentScreen, countContent, canAddContent, addScreen, duplicateScreen, addScreensFromTemplates, removeScreen, activateScreen, renameScreen, addPanel, removePanel, addContent, removeContent, activateContent, changeRect, swapPanels, findFreeFitRect, undersized, validateWorkspace, openContent}
 }

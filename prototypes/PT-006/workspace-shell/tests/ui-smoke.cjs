@@ -43,25 +43,25 @@ async function main() {
     const settle=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))
     const assert=(truth,message)=>{if(!truth)throw Error(message)}
     const button=(where,text)=>{const target=[...document.querySelectorAll(where)].find(el=>el.textContent.trim()===text);assert(target,'Missing button '+text);target.click();return target}
-    await wait(()=>document.querySelector('.plan-history'))
-    assert(document.querySelectorAll('.window-panel').length===4,'Initial windows')
+    await wait(()=>document.querySelector('[data-panel-id="panel-1"]'))
+    assert(document.querySelectorAll('.window-panel').length===5,'Initial windows')
     const first=document.querySelector('[data-panel-id="panel-3"] .workspace-open-link')
     assert(first,'Event navigation action')
     first.click();await settle()
-    assert([...document.querySelectorAll('.screen-tab.current')].some(el=>el.textContent.includes('Факты и связи')),'Navigate across screens')
-    assert(document.querySelector('[data-panel-id="panel-8"] .sim-extra-heading').textContent.includes('Explorer'),'Explorer displayed')
+    assert([...document.querySelectorAll('.screen-tab.current')].some(el=>el.textContent.includes('Архитектура и реализация')),'Navigate across screens')
+    assert(document.querySelector('[data-panel-id="panel-8"] .sim-content'),'Trace view displayed')
     assert(document.querySelector('[data-panel-id="panel-8"] .window-focus-flash'),'Flash shown')
     button('.header-actions button','Просмотр');await settle()
     assert(document.querySelector('.app-shell.view-mode'),'View mode activated')
     assert(getComputedStyle(document.querySelector('.panel-header')).display==='none','Window chrome hidden')
     assert(document.querySelector('.sim-content'),'Content survives view mode')
-    button('.screen-tab','Обзор');await settle()
+    button('.screen-tab','История и факты');await settle()
     document.querySelector('[data-panel-id="panel-3"] .workspace-open-link').click();await settle()
-    assert([...document.querySelectorAll('.screen-tab.current')].some(el=>el.textContent.includes('Факты и связи')),'Navigation works with chrome hidden')
+    assert([...document.querySelectorAll('.screen-tab.current')].some(el=>el.textContent.includes('Архитектура и реализация')),'Navigation works with chrome hidden')
     assert(document.querySelector('.view-mode [data-panel-id="panel-8"] .window-focus-flash'),'Flash in view mode')
     const persisted=localStorage.getItem('workspace-shell-view-mode-v1')
     assert(persisted==='1','View mode persisted')
-    return {initialWindows:4,openContentCrossScreen:true,focusPulse:true,viewMode:true,navigationInViewMode:true,persistedMode:persisted}
+    return {initialWindows:5,openContentCrossScreen:true,focusPulse:true,viewMode:true,navigationInViewMode:true,persistedMode:persisted}
   })()`)
   const headerPoint=await evaluate(`(()=>{const r=document.querySelector('.context-title').getBoundingClientRect();const stage=document.querySelector('.stage-scroll');return {x:r.left+Math.min(40,r.width/2),y:r.top+r.height/2,before:stage.scrollTop,max:stage.scrollHeight-stage.clientHeight}})()`)
   if(headerPoint.max<100)throw Error('Natural Workspace has no panning range')
@@ -71,17 +71,17 @@ async function main() {
   const mouseScroll=await evaluate('document.querySelector(".stage-scroll").scrollTop')
   if(mouseScroll<=headerPoint.before)throw Error('Native mouse wheel on main header did not scroll the board: '+JSON.stringify({headerPoint,mouseScroll}))
   await call('Page.reload',{ignoreCache:true})
-  const reload=await evaluate(`(async()=>{for(let i=0;i<60&&!document.querySelector('.plan-history');i++)await new Promise(r=>setTimeout(r,100));return {viewMode:document.querySelector('.app-shell')?.classList.contains('view-mode'),panelHeader:getComputedStyle(document.querySelector('.panel-header')).display}})()`)
+  const reload=await evaluate(`(async()=>{for(let i=0;i<60&&!document.querySelector('.sim-content');i++)await new Promise(r=>setTimeout(r,100));return {viewMode:document.querySelector('.app-shell')?.classList.contains('view-mode'),panelHeader:getComputedStyle(document.querySelector('.panel-header')).display}})()`)
   if(!reload.viewMode||reload.panelHeader!=='none')throw Error('Persisted view mode did not restore')
   const extra=await evaluate(`(async()=>{
     const settle=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))
     const assert=(ok,msg)=>{if(!ok)throw Error(msg)}
     const click=(select,text)=>{const b=[...document.querySelectorAll(select)].find(el=>el.textContent.trim()===text);assert(b,'Button '+text);b.click()}
     click('.header-actions button','Обычный режим');await settle()
-    click('.screen-tab','Обзор');await settle()
+    click('.screen-tab','История и факты');await settle()
     const panel=document.querySelector('[data-panel-id="panel-2"]')
     const {CONTENT}=await import('/src/profiles/architecture-simulator/workspace.ts')
-    for(const kind of ['work','implementation','impact']){
+    for(const kind of ['work','implementation','impact','fitness']){
       panel.querySelector('button[aria-label="Добавить содержимое"]').click();await settle()
       const label=CONTENT.find(x=>x.id===kind).label
       const choice=[...panel.querySelectorAll('.pick-option')].find(el=>el.textContent.includes(label))
@@ -139,12 +139,56 @@ async function main() {
     assert(!ctrlRailWheel.defaultPrevented,'Shell header preserves Ctrl+wheel')
     click('.branch-switch button','Architecture B');await settle()
     const other=document.querySelector('[data-panel-id="panel-2"]')
-    assert(other.querySelectorAll('.content-tab').length===2,'Separate B layout')
+    assert(other.querySelectorAll('.content-tab').length===1,'Separate B layout')
     click('.branch-switch button','Architecture A');await settle()
     assert(document.querySelector('[data-panel-id="panel-2"]').querySelectorAll('.content-tab').length===5,'Restored A layout')
     return {wheelScrollLeft:scrollValue,ctrlWheelAvailable:true,branchLayoutsIndependent:true,windowHeaderStopsChaining:true,shellHeaderZoneScrollsWorkspace:true}
   })()`)
-  console.log(JSON.stringify({...result,nativeHeaderWheel:{before:headerPoint.before,after:mouseScroll,max:headerPoint.max},reload,extra,exceptions:errors},null,2))
+  const creation=await evaluate(`(async()=>{
+    const settle=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))
+    const assert=(ok,msg)=>{if(!ok)throw Error(msg)}
+    const choose=async text=>{
+      document.querySelector('.new-screen').click();await settle()
+      const options=[...document.querySelectorAll('.screen-create-option')]
+      const btn=options.find(x=>x.querySelector('strong')?.textContent.includes(text))
+      assert(btn,'Create option '+text);btn.click();await settle()
+    }
+    const contentA=localStorage.getItem('pt006-simulator-content-A-v6')
+    const layoutB=localStorage.getItem('pt006-simulator-layout-B-v3')
+    const old=JSON.parse(localStorage.getItem('pt006-simulator-layout-A-v3'))
+    assert(old.screens.length===4,'Preexisting user layout')
+    await choose('Копия текущего')
+    let after=JSON.parse(localStorage.getItem('pt006-simulator-layout-A-v3'))
+    assert(after.screens.length===5,'Clone adds screen')
+    assert(after.screens[4].panels.length===5,'Clone copies all current windows')
+    assert(after.screens[4].panels.some(p=>p.tabs.length===5),'Clone copies current tab composition')
+    // The reusable layout recipes are retained in code for future Context Template
+    // composition, but simulation-specific options are not exposed by + Экран.
+    document.querySelector('.new-screen').click();await settle()
+    const options=[...document.querySelectorAll('.screen-create-option')]
+    assert(options.length===2,'Generic screen menu has only blank and copy')
+    assert(options.every(b=>!b.textContent.includes('Планирование')&&!b.textContent.includes('Четыре экрана симулятора')),'Domain presets stay out of + Экран')
+    document.querySelector('.new-screen').click();await settle()
+    assert(after.screens[4].title.includes('копия'),'Earlier clone preserved')
+    const allIds=[...after.screens.map(s=>s.id),...after.screens.flatMap(s=>s.panels.map(p=>p.id))]
+    assert(new Set(allIds).size===allIds.length,'Globally unique screen/window IDs')
+    assert(JSON.stringify(after.screens.slice(0,4))===JSON.stringify(old.screens),'Existing screens unchanged')
+    await choose('Пустой экран')
+    after=JSON.parse(localStorage.getItem('pt006-simulator-layout-A-v3'))
+    assert(after.screens.length===6&&after.screens[5].panels.length===0,'Empty screen created')
+    assert(localStorage.getItem('pt006-simulator-content-A-v6')===contentA,'Creating screens did not mutate A data')
+    assert(localStorage.getItem('pt006-simulator-layout-B-v3')===layoutB,'Creating screens did not mutate B layout')
+    assert(document.querySelector('.empty-workspace'),'Empty screen visible')
+    return {clone:true,profilePresetsHidden:true,blank:true,screenCount:after.screens.length,uniqueIds:true,existingLayoutsPreserved:true}
+  })()`)
+  await call('Page.reload',{ignoreCache:true})
+  const afterCreationReload=await evaluate(`(async()=>{
+    for(let i=0;i<60&&!document.querySelector('.screen-tab.current');i++)await new Promise(r=>setTimeout(r,100))
+    const w=JSON.parse(localStorage.getItem('pt006-simulator-layout-A-v3'))
+    return {screens:w.screens.length,activeEmpty:document.querySelector('.empty-workspace')!==null}
+  })()`)
+  if(afterCreationReload.screens!==6||!afterCreationReload.activeEmpty)throw Error('New screens were not restored from layout-v3')
+  console.log(JSON.stringify({...result,nativeHeaderWheel:{before:headerPoint.before,after:mouseScroll,max:headerPoint.max},reload,extra,creation,afterCreationReload,exceptions:errors},null,2))
   if(errors.length)throw Error('Browser exceptions: '+errors.join('; '))
 }
 main().catch(error=>{console.error(error.stack);process.exitCode=1}).finally(()=>{

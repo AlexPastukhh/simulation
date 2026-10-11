@@ -63,7 +63,7 @@ test('existing simulator layout remains valid through the generic shell model',(
   assert.equal(simulator.validateWorkspace(INITIAL_WORKSPACE),true)
   const plan=simulator.openContent(INITIAL_WORKSPACE,'architecturePlan','unused')
   assert.equal(plan.created,false)
-  assert.equal(plan.screenId,'screen-4')
+  assert.equal(plan.screenId,'screen-3')
 })
 test('generic shell does not import simulator domain types or components',()=>{
   for(const file of ['workspace.ts','WorkspaceShell.tsx','windowDrag.ts','contracts.ts']){

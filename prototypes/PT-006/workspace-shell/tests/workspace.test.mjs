@@ -7,7 +7,7 @@ test('default workspace is valid and has four independent screens', () => {
   const s = seed()
   assert.equal(validateWorkspace(s), true)
   assert.equal(s.screens.length, 4)
-  assert.equal(currentScreen(s).title, 'Обзор')
+  assert.equal(currentScreen(s).title, 'История и факты')
 })
 test('creating a screen activates a new empty layout', () => {
   const s = addScreen(seed(), 'screen-new', 'Мой экран')
@@ -35,25 +35,25 @@ test('same singleton kind can appear in another screen', () => {
   assert.equal(countContent(added, 'screen-2', 'events'), 1)
 })
 test('non-singleton content can exist in several panels', () => {
-  const s = addPanel(seed(), 'screen-1', 'p-new')
-  const added = addContent(s, 'screen-1', 'p-new', 'architecture')
-  assert.equal(countContent(added, 'screen-1', 'architecture'), 2)
+  const s = addPanel(seed(), 'screen-2', 'p-new')
+  const added = addContent(s, 'screen-2', 'p-new', 'architecture')
+  assert.equal(countContent(added, 'screen-2', 'architecture'), 2)
 })
 test('adding a tab keeps panel identity and selects added kind', () => {
   const s = addContent(seed(), 'screen-1', 'panel-2', 'work')
   const p = s.screens[0].panels.find(p => p.id === 'panel-2')
-  assert.deepEqual(p.tabs, ['requirements', 'architecture', 'work'])
+  assert.deepEqual(p.tabs, ['current', 'work'])
   assert.equal(p.active, 'work')
 })
 test('closing a tab frees singleton capacity without deleting panels', () => {
-  const s = removeContent(seed(), 'screen-1', 'panel-3', 'events')
+  const s = removeContent(seed(), 'screen-1', 'panel-1', 'events')
   assert.equal(canAddContent(s, 'screen-1', 'events'), true)
-  assert.equal(s.screens[0].panels.find(p => p.id === 'panel-3').active, null)
+  assert.equal(s.screens[0].panels.find(p => p.id === 'panel-1').active, null)
 })
 test('closing a panel releases its singleton type', () => {
   const s = removePanel(seed(), 'screen-1', 'panel-1')
-  assert.equal(canAddContent(s, 'screen-1', 'plan'), true)
-  assert.equal(s.screens[0].panels.length, 3)
+  assert.equal(canAddContent(s, 'screen-1', 'events'), true)
+  assert.equal(s.screens[0].panels.length, 4)
 })
 test('full swap exchanges both positions and sizes without changing ids or tabs', () => {
   const s = seed(), beforeA = structuredClone(s.screens[0].panels[0]), beforeB = structuredClone(s.screens[0].panels[1])
@@ -71,7 +71,7 @@ test('resizing below recommended minimum is allowed and explicitly detectable', 
   const s = changeRect(seed(), 'screen-1', 'panel-1', { x: 100, y: 100, w: 200, h: 170 })
   const p = s.screens[0].panels[0]
   assert.equal(p.rect.w, 200)
-  assert.deepEqual(undersized(p), { width: 365, height: 425 })
+  assert.deepEqual(undersized(p), { width: 310, height: 400 })
 })
 test('hard frame minimum prevents a window becoming unselectable', () => {
   const s = changeRect(seed(), 'screen-1', 'panel-1', { x: -20, y: -30, w: 8, h: 12 })
@@ -84,8 +84,8 @@ test('hard frame minimum prevents a window becoming unselectable', () => {
 test('switching screen preserves the untouched layout and state references', () => {
   const s = activateScreen(seed(), 'screen-2')
   assert.equal(s.activeScreenId, 'screen-2')
-  assert.equal(s.screens[0].panels.length, 4)
-  assert.equal(s.screens[1].panels.length, 2)
+  assert.equal(s.screens[0].panels.length, 5)
+  assert.equal(s.screens[1].panels.length, 4)
 })
 test('detects corrupted persisted workspace with duplicated singleton', () => {
   const s = seed()
