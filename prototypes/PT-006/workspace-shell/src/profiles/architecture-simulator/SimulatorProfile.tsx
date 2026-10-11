@@ -14,12 +14,16 @@ import { atCursor } from './history.ts'
 import { StateHistory } from './HistoryContent.tsx'
 import { referenceWarnings } from './references.ts'
 import type { WorkspaceProfile, WorkspaceEvent, InspectorMode, InspectorActions } from '../../shell/contracts.ts'
+import { createComparisonScope, validateComparisonScope, comparisonDescriptor, comparisonScreens, parseScopeContentId } from './scope-mechanisms/comparison.ts'
+import type { ComparisonScope, ComparisonFocus } from './scope-mechanisms/comparison.ts'
+import { ComparisonScopeView } from './scope-mechanisms/ComparisonScopeView.tsx'
 type Mutate = (fn: (draft: DemoStore) => void) => void
 type Inspector = { kind: ContentKind; mode: InspectorMode; contextId?: string } | null
 const STORAGE_DATA_A = 'pt006-simulator-content-A-v6'
 const STORAGE_DATA_B = 'pt006-simulator-content-B-v6'
 const STORAGE_CONTEXT_COPIES = 'pt006-simulator-context-copies-v1'
 const STORAGE_SHARED_LAYOUT = 'pt006-simulator-multicontext-layout-v1'
+const STORAGE_COMPARISON_SCOPES='pt006-simulator-comparison-scopes-v1'
 type NotesState={notes:string}
 type SavedContext = { id: string; title: string; templateId: string; sourceId: string; state: DemoStore | NotesState }
 const NOTES_DESCRIPTOR={id:'notes',label:'Требования / заметки',caption:'Минимальный Context без подготовленной истории',icon:'▤',minWidth:340,minHeight:300,maxPerScreen:1,accent:'#55c4ad'}
@@ -107,6 +111,20 @@ export function useSimulatorProfile(): WorkspaceProfile & { shared: WorkspacePro
     B: restore(STORAGE_DATA_B, ['pt006-simulator-content-B-v5', 'pt006-simulator-content-B-v4', 'pt006-simulator-content-B-v3'], initialDataB, validateDemo, value => migrateLegacyDemo(value, initialDataB), value => migrateLegacyDemo(value, initialDataB) ?? value),
   }))
   const [contextCopies,setContextCopies]=useState<Record<string,SavedContext>>(restoreContextCopies)
+  const [scopes,setScopes]=useState<Record<string,ComparisonScope>>(()=>{
+    try {
+      const parsed:unknown=JSON.parse(localStorage.getItem(STORAGE_COMPARISON_SCOPES)??'null')
+      if(!parsed||typeof parsed!=='object'||(parsed as {version?:number}).version!==1)return {}
+      const items=(parsed as {items?:unknown}).items
+      if(!Array.isArray(items))return {}
+      const resolve=(id:string):DemoStore|null =>id==='A'||id==='B'?branchData[id]:(contextCopies[id]?.templateId==='architecture-evolution'?contextCopies[id].state as DemoStore:null)
+      const loaded:Record<string,ComparisonScope>={}
+      for(const item of items){if(!validateComparisonScope(item,resolve)||loaded[item.id])return {};loaded[item.id]=item}
+      return loaded
+    }catch{return {}}
+  })
+  const initialScopes=useRef(scopes)
+  useEffect(()=>{if(scopes!==initialScopes.current)localStorage.setItem(STORAGE_COMPARISON_SCOPES,JSON.stringify({version:1,items:Object.values(scopes)}))},[scopes])
   const [inspector, setInspector] = useState<Inspector>(null)
   const initialCopies=useRef(contextCopies)
   // A damaged persisted registry is never silently overwritten during hydration.
@@ -143,7 +161,18 @@ export function useSimulatorProfile(): WorkspaceProfile & { shared: WorkspacePro
     return {id,descriptors:scopeDescriptors(id,CONTENT),templates:bindContextScreens(id,SCREEN_TEMPLATES),
       commit:()=>setContextCopies(prev=>({...prev,[id]:{id,title:prepared.title,templateId:prepared.templateId,sourceId:prepared.provenance??'A',state:prepared.state}}))}
   }
+  const prepareComparison=(input:{leftId:string;rightId:string})=>{
+    const scope=createComparisonScope('cmp-'+crypto.randomUUID(),input,contextStore)
+    if(!scope)return null
+    return {descriptors:[comparisonDescriptor(scope)],templates:comparisonScreens(scope),
+      commit:()=>setScopes(prev=>({...prev,[scope.id]:scope}))}
+  }
   const renderContextContent=(id:string,dispatch:(event:WorkspaceEvent)=>void)=>{
+    const scopeId=parseScopeContentId(id)
+    if(scopeId){
+      const scope=scopes[scopeId]
+      return scope?<ComparisonScopeView scope={scope} resolve={contextStore} onFocus={(focus:ComparisonFocus)=>setScopes(prev=>({...prev,[scopeId]:{...prev[scopeId],focus}}))}/>:null
+    }
     const ref=parseScopedContentId(id)
     if(!ref||!contextIds.includes(ref.contextId))return null
     if(ref.resourceId==='notes'&&contextCopies[ref.contextId]?.templateId==='minimal-planning'){
@@ -155,6 +184,7 @@ export function useSimulatorProfile(): WorkspaceProfile & { shared: WorkspacePro
         }}/></div>
     }
     if(!CONTENT.some(d=>d.id===ref.resourceId))return null
+    if(ref.resourceId==='comparison')return <div className="sim-content"><p className="history-notice">В общем Workspace сравнение использует явные Scope bindings. Нажмите «⇄ Композиция» и выберите два контекста. Старый Comparison A/B сохранён в режиме отдельных раскладок.</p></div>
     const live=contextStore(ref.contextId)
     if(!live)return null
     const snapshot=atCursor(live)
@@ -226,7 +256,7 @@ export function useSimulatorProfile(): WorkspaceProfile & { shared: WorkspacePro
     id:'architecture-simulator',
     title:'Architecture Simulator',
     subtitle:'Workspace · независимые Context',
-    descriptors:contextIds.flatMap(id=>scopeDescriptors(id,contextCopies[id]?.templateId==='minimal-planning'?[NOTES_DESCRIPTOR]:CONTENT)),
+    descriptors:[...contextIds.flatMap(id=>scopeDescriptors(id,contextCopies[id]?.templateId==='minimal-planning'?[NOTES_DESCRIPTOR]:CONTENT)),...Object.values(scopes).map(comparisonDescriptor)],
     initialWorkspace:sharedInitialWorkspace,
     contextId:'workspace',
     contexts:['workspace'],
@@ -236,9 +266,10 @@ export function useSimulatorProfile(): WorkspaceProfile & { shared: WorkspacePro
     renderHeader:()=> <div className="branch-switch" role="group" aria-label="Рабочие контексты">
       {contextIds.map(id=><span key={id} className="context-name" title={id}>Context {id}</span>)}
     </div>,
-    renderFactualTime:()=> <div className="factual-time-bar"><span>Context A и B — независимые источники; копии сохраняют собственный State · Comparison пока профильный A/B.</span></div>,
+    renderFactualTime:()=> <div className="factual-time-bar"><span>Context A и B — независимые источники; Scope Comparison использует явные read-only привязки и не меняет State.</span></div>,
     renderContent:renderContextContent,
     renderPanelTools:(value:string)=>{
+      if(parseScopeContentId(value))return null
       const ref=parseScopedContentId(value)
       if(!ref||ref.resourceId==='notes')return null
       const show=(mode:InspectorMode)=>setInspector({kind:ref.resourceId as ContentKind,mode,contextId:ref.contextId})
@@ -257,6 +288,8 @@ export function useSimulatorProfile(): WorkspaceProfile & { shared: WorkspacePro
     resetContent:()=>{setInspector(null)}, // never erase context data when resetting only the shared screen layout
     resetScope:'layout-only',
     createContext,
+    compositionContextIds:contextIds,
+    prepareComparison,
     contextTemplateOptions:[
       {id:'architecture-evolution',title:'Эволюция архитектуры',description:'Независимый State и комплект четырёх экранов'},
       {id:'minimal-planning',title:'Минимальный контекст',description:'Один экран с требованиями и заметками, без History'},

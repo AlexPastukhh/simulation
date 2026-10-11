@@ -134,6 +134,9 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
   const [settingsOpen,setSettingsOpen]=useState(false)
   const [screenMenu,setScreenMenu]=useState<{left:number}|null>(null)
   const [contextMenu,setContextMenu]=useState(false)
+  const [compositionMenu,setCompositionMenu]=useState(false)
+  const [compositionMode,setCompositionMode]=useState<'ready'|'manual'>('ready')
+  const [sourceLeft,setSourceLeft]=useState('A'),[sourceRight,setSourceRight]=useState('B')
   const [fitGap,setFitGap]=useState(restoreGap)
   const [viewMode,setViewMode]=useState(()=>{try{return localStorage.getItem(VIEW_KEY)==='1'}catch{return false}})
   const [flashes,setFlashes]=useState<Record<string,number>>({})
@@ -188,7 +191,14 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
     window.addEventListener('pointerdown',close);window.addEventListener('keydown',escape)
     return ()=>{window.removeEventListener('pointerdown',close);window.removeEventListener('keydown',escape)}
   },[contextMenu])
-  useEffect(()=>{setFocused(null);setPicker(null);setFitArmed(null);setRename(false);setScreenMenu(null);setContextMenu(false);profile.onContextChanged?.()},[profile.contextId])
+  useEffect(()=>{
+    if(!compositionMenu)return
+    const dismiss=(event:PointerEvent)=>{if(event.target instanceof Element&&!event.target.closest('.composition-create-menu, .compose-trigger'))setCompositionMenu(false)}
+    const escape=(event:KeyboardEvent)=>{if(event.key==='Escape')setCompositionMenu(false)}
+    window.addEventListener('pointerdown',dismiss);window.addEventListener('keydown',escape)
+    return ()=>{window.removeEventListener('pointerdown',dismiss);window.removeEventListener('keydown',escape)}
+  },[compositionMenu])
+  useEffect(()=>{setFocused(null);setPicker(null);setFitArmed(null);setRename(false);setScreenMenu(null);setContextMenu(false);setCompositionMenu(false);profile.onContextChanged?.()},[profile.contextId])
   const {startDrag,hovered,ghost,notice,setNotice,draggedId,previewRect}=useWindowDrag({
     screen,workspace,board,stage,armedPanelId:fitArmed,fitGap,onFitted:()=>setFitArmed(null),update:modify,
   })
@@ -250,6 +260,39 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
     if(next)created.commit() // Never save a Context unless its complete screen bundle was accepted.
     finishNewScreen(next)
   }
+  const composeComparison=()=>{
+    const input=compositionMode==='ready'?{leftId:'A',rightId:'B'}:{leftId:sourceLeft,rightId:sourceRight}
+    const prepared=profile.prepareComparison?.(input)
+    if(!prepared){setNotice('Сравнение недоступно: нужны два разных совместимых контекста с Architecture');return}
+    const expanded=createWorkspaceModel([...profile.descriptors,...prepared.descriptors])
+    if(compositionMode==='manual'){
+      // Manual composition: A and B are already placed by the user. Bind the scope
+      // to those actual resources; never create extra source windows on their behalf.
+      const panels=prepared.templates[0]?.panels
+      if(!panels||panels.length!==3)return
+      const first=panels[0].active,second=panels[1].active,result=panels[2].active
+      const placed=new Set(screen.panels.flatMap(p=>p.tabs))
+      if(!first||!second||!result||!placed.has(first)||!placed.has(second)){
+        setNotice('Сначала откройте оба Architecture на текущем экране, затем создайте Comparison')
+        return
+      }
+      const id=screenId('panel')
+      const rect={...panels[2].rect,y:Math.max(26,...screen.panels.map(p=>p.rect.y+p.rect.h+24))}
+      const next=expanded.addContent(expanded.addPanel(workspace,screen.id,id,rect),screen.id,id,result)
+      if(!expanded.validateWorkspace(next)||!next.screens.some(s=>s.panels.some(p=>p.id===id&&p.active===result))){
+        setNotice('Не удалось создать окно сравнения');return
+      }
+      prepared.commit()
+      modify(()=>next)
+      setCompositionMenu(false);setNotice(null);setFocused(id)
+      return
+    }
+    const next=expanded.addScreensFromTemplates(workspace,prepared.templates,screenId)
+    if(!next){setNotice('Нельзя разместить композицию: неверные или повторяющиеся адреса');return}
+    prepared.commit()
+    setCompositionMenu(false)
+    finishNewScreen(next)
+  }
   const copyCurrentScreen=()=>finishNewScreen(ops.duplicateScreen(workspace,screen.id,screenId))
   const toggleScreenMenu=(button:HTMLButtonElement)=>{
     if(screenMenu){setScreenMenu(null);return}
@@ -257,6 +300,7 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
     setScreenMenu({left:Math.max(12,Math.min(bounds.left,window.innerWidth-344))})
     setSettingsOpen(false)
     setContextMenu(false)
+    setCompositionMenu(false)
   }
   const reset=()=>{
     const warning=profile.resetScope==='layout-only'
@@ -287,6 +331,7 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
       </section>}
       <div className="header-actions">
         {profile.createContext&&<button className="header-btn create-context" aria-expanded={contextMenu} onClick={()=>profile.contextTemplateOptions?.length?setContextMenu(v=>!v):addContext()}>+ Контекст</button>}
+        {profile.prepareComparison&&<button className="header-btn compose-trigger" aria-expanded={compositionMenu} onClick={()=>{setCompositionMenu(v=>!v);setContextMenu(false);setScreenMenu(null)}}>⇄ Композиция</button>}
         <button className="header-btn" onClick={()=>createWindow()}>+ Окно</button>
         <button className="header-btn highlighted" onClick={()=>profile.openInspector(profile.descriptors[0]?.id??'','schema')}>▦ Каталог / инспектор</button>
         <button className={'header-btn '+(viewMode?'highlighted':'')} aria-pressed={viewMode} onClick={()=>{setViewMode(v=>!v);setPicker(null);setFitArmed(null)}}>{viewMode?'Обычный режим':'Просмотр'}</button>
@@ -296,6 +341,16 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
       {contextMenu&&profile.contextTemplateOptions&&<section className="screen-create-menu context-create-menu" role="dialog" aria-label="Создать контекст" style={{right:24,left:'auto'}}>
         <div className="screen-create-title"><strong>Шаблон контекста</strong><button aria-label="Закрыть шаблоны контекста" onClick={()=>setContextMenu(false)}>×</button></div>
         {profile.contextTemplateOptions.map(item=><button key={item.id} className="screen-create-option" onClick={()=>addContext(item.id)}><strong>{item.title}</strong><small>{item.description}</small></button>)}
+      </section>}
+      {compositionMenu&&profile.prepareComparison&&<section className="screen-create-menu context-create-menu composition-create-menu" role="dialog" aria-label="Композиция сравнения" style={{right:24,left:'auto'}}>
+        <div className="screen-create-title"><strong>Сравнение контекстов</strong><button aria-label="Закрыть композицию" onClick={()=>setCompositionMenu(false)}>×</button></div>
+        <div className="sim-segment"><button className={compositionMode==='ready'?'is-selected':''} onClick={()=>setCompositionMode('ready')}>Готовая A+B</button><button className={compositionMode==='manual'?'is-selected':''} onClick={()=>setCompositionMode('manual')}>Ручная сборка</button></div>
+        {compositionMode==='manual'&&<div className="composition-selectors">
+          <label>1. Первый Context<select aria-label="Первый контекст" value={sourceLeft} onChange={e=>setSourceLeft(e.target.value)}>{profile.compositionContextIds?.map(id=><option key={id} value={id}>{id}</option>)}</select></label>
+          <label>2. Второй Context<select aria-label="Второй контекст" value={sourceRight} onChange={e=>setSourceRight(e.target.value)}>{profile.compositionContextIds?.map(id=><option key={id} value={id}>{id}</option>)}</select></label>
+        </div>}
+        <p className="sim-hint">{compositionMode==='ready'?'Готовая композиция создаёт отдельный экран с Architecture A/B и read-only Comparison.':'3. Сначала откройте оба Architecture на текущем экране через + Окно, затем свяжите их read-only Scope.'}</p>
+        <button className="screen-create-option compose-submit" onClick={composeComparison}><strong>{compositionMode==='ready'?'Открыть A+B + Comparison':'Связать открытые окна'}</strong><small>{compositionMode==='ready'?'Создаст три окна на новом экране':'Добавит только Comparison на текущий экран; данные останутся неизменными'}</small></button>
       </section>}
       {settingsOpen&&<section className="settings-popover" id="workspace-settings" role="dialog" aria-label="Настройки рабочего пространства">
         <div className="settings-popover-header"><strong>⚙ Настройки Workspace</strong><button className="settings-close" aria-label="Закрыть настройки" onClick={()=>setSettingsOpen(false)}>×</button></div>

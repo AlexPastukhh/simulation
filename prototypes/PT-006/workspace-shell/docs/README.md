@@ -7,8 +7,8 @@
 | Область | Документ | Статус |
 |---|---|---|
 | **Shell** — окна, вкладки, экраны, навигация, компоновка | [Shell: текущие механизмы](shell/README.md) | **CURRENT**; пустой экран и копия текущего доступны в Shell |
-| **Workspace** — общий многоконтекстный режим, независимые копии, старые A/B и ограничения | [Workspace: как работает сейчас](workspace/README.md) | **CURRENT / G-CODE-02** |
-| **Целевая архитектура** — оставшиеся Scope Mechanisms, композиции и межпрофильные контракты | [Кандидатная модель Workspace](workspace/CANDIDATE_MODEL.md) | **CANDIDATE / G-CODE-03–04**, Context уже частично реализован |
+| **Workspace** — общий многоконтекстный режим, Context, Scope Comparison и композиции | [Workspace: как работает сейчас](workspace/README.md) | **CURRENT / G-CODE-03** |
+| **Целевая архитектура** — универсальные Scope/permissions и межпрофильные контракты | [Кандидатная модель Workspace](workspace/CANDIDATE_MODEL.md) | **CANDIDATE / G-CODE-04 и будущие расширения**; первый Scope уже реализован |
 | **Следующий этап кода** — планируемые изменения и проверки | [Предварительный пополняемый план](workspace/NEXT_CODE_PLAN_CANDIDATE.md) | **CANDIDATE / OPEN**, код не меняется этим документом |
 | **Профили** — поставщики содержимого, состояния и представлений | [Профили и контракт подключения](profiles/README.md) | **CURRENT** с явными будущими направлениями |
 | **Architecture Simulator** — одна предметная реализация | [Документация профиля](profiles/architecture-simulator/README.md) | **CURRENT** |
@@ -22,7 +22,7 @@
 - **Shell**: универсальные действия с экранами, окнами, вкладками, их размещением и переходами. Не знает предметных фактов симуляции.
 - **Workspace**: `Workspace v3` в TypeScript по-прежнему хранит **только раскладку**, но отдельные `ContextInstance` и контекстные адреса уже работают в общем Workspace на одном профиле. Это не готовый реестр всех профилей и Scope-инструментов.
 - **Profile**: регистрирует содержимое и его представления, предоставляет предметные данные, State/Schema/History и операции. Сейчас подключён только Architecture Simulator.
-- **Scope Mechanisms**: пока только предлагаемая система взаимодействий; профильный `comparison` ещё использует фиксированные `allData.A/B`. Общего Scope runtime и соответствующих папок исходников нет.
+- **Scope Mechanisms**: профильный `architecture-comparison-v1` уже реализует read-only Scope двух явных Context, готовую и ручную сборку. Legacy `comparison` в старом режиме продолжает читать `allData.A/B` для совместимости. Общего межпрофильного Scope runtime нет.
 
 ## Карта каталогов
 
@@ -40,11 +40,11 @@ docs/
 tests/                             # unit и UI-smoke проверки
 ```
 
-Документация **частично** повторяет структуру кода, но не моделирует несуществующие каталоги. В частности, сейчас нет самостоятельных `src/workspace/`, `src/integrations/` и `src/**/scope-mechanisms/`.
+Документация **частично** повторяет структуру кода, но не моделирует несуществующие каталоги. В частности, нет самостоятельных `src/workspace/`, `src/integrations/` и универсальной `src/shell/scope-mechanisms/`; **профильная** папка `src/profiles/architecture-simulator/scope-mechanisms/` существует и содержит работающий Comparison.
 
 ## Статусы и история
 
-**CURRENT / Git main** — реализация в опубликованном коде; **LOCAL UNPUBLISHED** — незакоммиченные изменения до публикации; **CANDIDATE** — нереализованная часть целевой модели; **HISTORICAL** — датированная итерация. С G-CODE-02 доступны общий Workspace, Context A/B, независимые копии и Context Templates. Scope Mechanisms и межпрофильные композиции остаются CANDIDATE.
+**CURRENT / Git main** — реализация в опубликованном коде; **LOCAL UNPUBLISHED** — незакоммиченные изменения до публикации; **CANDIDATE** — нереализованная часть целевой модели; **HISTORICAL** — датированная итерация. С G-CODE-03 доступны общий Workspace, Context A/B, независимые копии, Context Templates, один read-only Scope Comparison и два пути его сборки. Другие Scope и межпрофильные композиции остаются CANDIDATE.
 
 Датированные решения/проверки: [Workspace WSC-PR-01–04](../../PT006_WORKSPACE_INTERACTIONS_2026-10-10.md), [исправления PT-006](../../PT006_REMEDIATION_2026-10-10.md). Общие кандидаты: [SC-001@v5](../../../../SC-001_desired_architecture_simulator_scenario_v5_candidate.md), [V3A r10](../../../../architecture_simulator_proposal_composition_v3a_candidate_r10_pt006_remediation.md). Изменение документации не принимает их автоматически.
 

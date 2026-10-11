@@ -182,6 +182,8 @@
 <a id="comparison"></a>
 ### 16. `comparison` — Cross-Architecture Comparison
 
+**Граница G-CODE-03:** эта запись описывает **исторический профильный вид** из 18 видов симулятора, который продолжает работать в режиме отдельных A/B раскладок и читать `allData.A/B`. **В общем Workspace** такой старый вид не подменяет источники автоматически: новый механизм [Scope Comparison](../workspace/README.md) принимает **две явные привязки Context**, проверяет применимость, отображает read-only результат под отдельным ID `scope/<scopeId>` и хранит focus в Scope instance, а не в `comparison.focus` DemoStore. Механизм Scope **не является 19-м доменным видом** из каталога.
+
 - **Вопрос:** как альтернативные архитектуры A/B отреагировали на *один и тот же* внешний стимул и почему расходятся фактические последствия?
 - **Показывает:** общий anchor (`comparison.selectedAnchorId`) и текстовые фактические evidence обеих веток по выбранному `focus = events | requirements | work`; сообщает о несоответствии текста общего события, если сравниваемые records расходятся.
 - **Источник/время:** `allData.A/B` из `atCursor`, `scenario.anchors`, `events.records`, `requirements.items`, `work.episodes`; `EXTRA_SOURCES.comparison=['events','requirements','work']`. У каждой ветки собственный factual cursor; общий сценарный якорь **не** обязан означать одну и ту же локальную позицию истории.

@@ -20,6 +20,9 @@ export type WorkspaceProfile = {
   screenBundles?: ScreenTemplateBundle[]
   /** A Context Template creates independent profile state, then Shell places its screens atomically. */
   contextTemplateOptions?: { id: string; title: string; description?: string }[]
+  /** Optional profile-owned composition. Shell only validates/places its windows. */
+  compositionContextIds?: string[]
+  prepareComparison?: (input: {leftId:string;rightId:string}) => {descriptors:ContentDescriptor[];templates:ScreenTemplate[];commit:()=>void} | null
   createContext?: (templateId?: string) => { id: string; descriptors: ContentDescriptor[]; templates: ScreenTemplate[]; commit: () => void } | null
   /** Map a structured Context resource address to the private layout tab ID. */
   resolveContentAddress?: (target: ContentAddress) => string | null
