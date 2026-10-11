@@ -1,5 +1,9 @@
-import { useEffect, useState } from 'react'
-import { CONTENT, INITIAL_WORKSPACE, getDescriptor, migrateLegacyWorkspace } from './workspace.ts'
+import { useEffect, useRef, useState } from 'react'
+import { CONTENT, INITIAL_WORKSPACE, SCREEN_TEMPLATES, getDescriptor, migrateLegacyWorkspace } from './workspace.ts'
+import { scopedContentId, parseScopedContentId, scopeDescriptors, bindContextScreens, bindLegacyLayout, combineContextLayouts, instantiateContext } from '../../shell/contexts.ts'
+import type { ContextTemplate } from '../../shell/contexts.ts'
+import { createWorkspaceModel } from '../../shell/workspace.ts'
+import type { Workspace } from '../../shell/workspace.ts'
 import type { ContentKind } from './workspace.ts'
 import { SCHEMAS, initialData, initialDataB, validateDemo, migrateLegacyDemo, replaceContentState } from './content.ts'
 import type { Branch, DemoStore } from './content.ts'
@@ -11,9 +15,49 @@ import { StateHistory } from './HistoryContent.tsx'
 import { referenceWarnings } from './references.ts'
 import type { WorkspaceProfile, WorkspaceEvent, InspectorMode, InspectorActions } from '../../shell/contracts.ts'
 type Mutate = (fn: (draft: DemoStore) => void) => void
-type Inspector = { kind: ContentKind; mode: InspectorMode } | null
+type Inspector = { kind: ContentKind; mode: InspectorMode; contextId?: string } | null
 const STORAGE_DATA_A = 'pt006-simulator-content-A-v6'
 const STORAGE_DATA_B = 'pt006-simulator-content-B-v6'
+const STORAGE_CONTEXT_COPIES = 'pt006-simulator-context-copies-v1'
+const STORAGE_SHARED_LAYOUT = 'pt006-simulator-multicontext-layout-v1'
+type NotesState={notes:string}
+type SavedContext = { id: string; title: string; templateId: string; sourceId: string; state: DemoStore | NotesState }
+const NOTES_DESCRIPTOR={id:'notes',label:'Требования / заметки',caption:'Минимальный Context без подготовленной истории',icon:'▤',minWidth:340,minHeight:300,maxPerScreen:1,accent:'#55c4ad'}
+function restoreContextCopies(): Record<string,SavedContext> {
+  try {
+    const parsed:unknown=JSON.parse(localStorage.getItem(STORAGE_CONTEXT_COPIES)??'null')
+    if(!parsed||typeof parsed!=='object'||(parsed as {version?:number}).version!==1)return {}
+    const values=(parsed as {items?:unknown}).items
+    if(!Array.isArray(values))return {}
+    const result:Record<string,SavedContext>={}
+    for(const entry of values){
+      const value=entry as Partial<SavedContext>
+      if(!value||typeof value.id!=='string'||!/^C-[a-f0-9-]{36}$/.test(value.id)||typeof value.title!=='string'||
+         typeof value.templateId!=='string'||typeof value.sourceId!=='string'||!value.state||
+         !(value.templateId==='architecture-evolution'?validateDemo(value.state):
+           value.templateId==='minimal-planning'&&value.state&&typeof (value.state as NotesState).notes==='string')||result[value.id])return {}
+      result[value.id]={id:value.id,title:value.title,templateId:value.templateId,sourceId:value.sourceId,state:value.state}
+    }
+    return result
+  }catch{return {}}
+}
+const architectureContextTemplate: ContextTemplate<DemoStore> = {
+  id:'architecture-evolution',profileId:'architecture-simulator',title:'Эволюция архитектуры',seed:initialData,
+  screens: SCREEN_TEMPLATES,
+}
+function legacyAsScoped(contextId:'A'|'B'):Workspace {
+  const model=createWorkspaceModel(CONTENT)
+  let old=INITIAL_WORKSPACE
+  try {
+    const raw=localStorage.getItem('pt006-simulator-layout-'+contextId+'-v3')
+    if(raw){const candidate:unknown=JSON.parse(raw);if(model.validateWorkspace(candidate))old=candidate}
+    else if(contextId==='A'){
+      const legacy=localStorage.getItem('pt006-workspace-v2')
+      if(legacy){const migrated=migrateLegacyWorkspace(JSON.parse(legacy));if(migrated&&model.validateWorkspace(migrated))old=migrated}
+    }
+  }catch{/* preserved independently, use safe template for shared workspace */}
+  return bindLegacyLayout(contextId,old)
+}
 function restore<T>(key: string, legacyKey: string | string[], initial: T, valid: (value: unknown) => value is T, migrate: (value: unknown) => T | null, upgrade?: (value: T) => T): T {
   try {
     const raw = localStorage.getItem(key)
@@ -56,25 +100,85 @@ function ProjectionReferences({ kind, mode, branch, data, allData, onJump }: {
     </details>)}
   </div>
 }
-export function useSimulatorProfile(): WorkspaceProfile {
+export function useSimulatorProfile(): WorkspaceProfile & { shared: WorkspaceProfile } {
   const [branch, setBranch] = useState<Branch>('A')
   const [branchData, setBranchData] = useState<Record<Branch, DemoStore>>(() => ({
     A: restore(STORAGE_DATA_A, ['pt006-simulator-content-A-v5', 'pt006-simulator-content-A-v4', 'pt006-simulator-content-A-v3'], initialData, validateDemo, value => migrateLegacyDemo(value, initialData), value => migrateLegacyDemo(value, initialData) ?? value),
     B: restore(STORAGE_DATA_B, ['pt006-simulator-content-B-v5', 'pt006-simulator-content-B-v4', 'pt006-simulator-content-B-v3'], initialDataB, validateDemo, value => migrateLegacyDemo(value, initialDataB), value => migrateLegacyDemo(value, initialDataB) ?? value),
   }))
+  const [contextCopies,setContextCopies]=useState<Record<string,SavedContext>>(restoreContextCopies)
   const [inspector, setInspector] = useState<Inspector>(null)
+  const initialCopies=useRef(contextCopies)
+  // A damaged persisted registry is never silently overwritten during hydration.
+  useEffect(()=>{if(contextCopies!==initialCopies.current)localStorage.setItem(STORAGE_CONTEXT_COPIES,JSON.stringify({version:1,items:Object.values(contextCopies)}))},[contextCopies])
   useEffect(() => { localStorage.setItem(STORAGE_DATA_A, stringify(branchData.A)); localStorage.setItem(STORAGE_DATA_B, stringify(branchData.B)) }, [branchData])
   const setData = (fn: (previous: DemoStore) => DemoStore) =>
     setBranchData(prev => ({ ...prev, [branch]: fn(prev[branch]) }))
   const mutate: Mutate = fn => setData(prev => { const next = structuredClone(prev); fn(next); return next })
+  const contextIds=['A','B',...Object.keys(contextCopies)]
+  const contextStore=(id:string):DemoStore|null => {
+    if(id==='A'||id==='B')return branchData[id]
+    const copy=contextCopies[id]
+    return copy&&validateDemo(copy.state)?copy.state:null
+  }
+  const mutateContext=(id:string):Mutate => fn=>{
+    if(id==='A'||id==='B'){
+      setBranchData(prev=>{const next=structuredClone(prev[id]);fn(next);return {...prev,[id]:next}})
+    }else if(contextCopies[id]){
+      setContextCopies(prev=>{const old=prev[id];if(!old||!validateDemo(old.state))return prev;const next=structuredClone(old.state);fn(next);return {...prev,[id]:{...old,state:next}}})
+    }
+  }
+  // Resolve legacy layouts when switching into the shared mode, not only at the app's first render.
+  const sharedInitialWorkspace:Workspace=combineContextLayouts([legacyAsScoped('A'),legacyAsScoped('B')])
+  const createContext=(templateId='architecture-evolution')=>{
+    if(templateId!=='architecture-evolution'&&templateId!=='minimal-planning')return null
+    const id='C-'+crypto.randomUUID()
+    if(templateId==='minimal-planning'){
+      const prepared=instantiateContext<NotesState>({id:templateId,profileId:'architecture-simulator',title:'Рабочий контекст',seed:{notes:''},screens:[]},id)
+      const templates=[{id:'minimal-notes',title:'Требования и заметки',panels:[{rect:{x:20,y:26,w:650,h:510},tabs:['notes'],active:'notes'}]}]
+      return {id,descriptors:scopeDescriptors(id,[NOTES_DESCRIPTOR]),templates:bindContextScreens(id,templates),
+        commit:()=>setContextCopies(prev=>({...prev,[id]:{id,title:prepared.title,templateId,sourceId:'',state:prepared.state}}))}
+    }
+    const prepared=instantiateContext({...architectureContextTemplate,seed:branchData.A},id,'A')
+    return {id,descriptors:scopeDescriptors(id,CONTENT),templates:bindContextScreens(id,SCREEN_TEMPLATES),
+      commit:()=>setContextCopies(prev=>({...prev,[id]:{id,title:prepared.title,templateId:prepared.templateId,sourceId:prepared.provenance??'A',state:prepared.state}}))}
+  }
+  const renderContextContent=(id:string,dispatch:(event:WorkspaceEvent)=>void)=>{
+    const ref=parseScopedContentId(id)
+    if(!ref||!contextIds.includes(ref.contextId))return null
+    if(ref.resourceId==='notes'&&contextCopies[ref.contextId]?.templateId==='minimal-planning'){
+      const copy=contextCopies[ref.contextId],state=copy.state as NotesState
+      return <div className="sim-content"><h2>Требования и заметки · {ref.contextId}</h2><p>Минимальный контекст без History. Изменения сохраняются отдельно от A/B.</p>
+        <textarea className="context-notes" aria-label={'Заметки '+ref.contextId} value={state.notes} onChange={event=>{
+          const notes=event.target.value
+          setContextCopies(prev=>({...prev,[ref.contextId]:{...prev[ref.contextId],state:{notes}}}))
+        }}/></div>
+    }
+    if(!CONTENT.some(d=>d.id===ref.resourceId))return null
+    const live=contextStore(ref.contextId)
+    if(!live)return null
+    const snapshot=atCursor(live)
+    const kind=ref.resourceId as ContentKind
+    const contextualDispatch=(event:WorkspaceEvent)=>dispatch({...event,target:{...event.target,contextId:ref.contextId}})
+    const canShow=kind==='events'||(snapshot.available&&(kind!=='comparison'||(resolvedA.available&&resolvedB.available)))
+    return <DomainContent key={id} kind={kind} branch={ref.contextId==='B'?'B':'A'} data={snapshot.data} allData={{A:resolvedA.data,B:resolvedB.data}} mutate={mutateContext(ref.contextId)} unavailable={!canShow} onWorkspaceEvent={contextualDispatch}/>
+  }
   const liveData = branchData[branch]
-  const warnings = referenceWarnings(liveData)
   const resolvedA = atCursor(branchData.A), resolvedB = atCursor(branchData.B)
   const resolved = branch === 'A' ? resolvedA : resolvedB
   const data = resolved.data
   const allData = { A: resolvedA.data, B: resolvedB.data }
   const available = (kind: ContentKind) => kind === 'events' || (resolved.available && (kind !== 'comparison' || (resolvedA.available && resolvedB.available)))
   const openInspector = (kind: string, mode: InspectorMode) => setInspector({kind: kind as ContentKind, mode})
+  const inspectedId=inspector?.contextId
+  const inspectedLive=(inspectedId&&contextStore(inspectedId))||liveData
+  const inspectedSnapshot=atCursor(inspectedLive)
+  const inspectedData=inspectedSnapshot.data
+  const inspectedBranch:Branch=inspectedId==='B'?'B':inspectedId?'A':branch
+  const inspectedMutate=inspectedId?mutateContext(inspectedId):mutate
+  const inspectedWarnings=referenceWarnings(inspectedLive)
+  const inspectedAvailable=(kind:ContentKind)=>kind==='events'||(inspectedSnapshot.available&&(kind!=='comparison'||(resolvedA.available&&resolvedB.available)))
+  const inspectedContentId=(kind:ContentKind)=>inspectedId?scopedContentId(inspectedId,kind):kind
   const modeLabels: {id: InspectorMode; label: string}[] = [
     {id:'preview',label:'Предпросмотр'}, {id:'state',label:'Фактический State'},
     {id:'schema',label:'JSON Schema'}, {id:'history',label:'История'},
@@ -87,19 +191,19 @@ export function useSimulatorProfile(): WorkspaceProfile {
       <div className="catalog-details"><div className="catalog-title"><div><h3>{getDescriptor(inspector.kind).label}</h3><p>Рекомендуемый минимум {getDescriptor(inspector.kind).minWidth} × {getDescriptor(inspector.kind).minHeight} px · {getDescriptor(inspector.kind).maxPerScreen === null ? 'несколько экземпляров' : '1 экземпляр на экран'}</p></div><span className="persisted-label">● Данные не зависят от окон</span></div>
       <div className="inspector-tabs">{modeLabels.map(t => <button className={inspector.mode === t.id ? 'active' : ''} key={t.id} onClick={() => setInspector({ ...inspector, mode: t.id })}>{t.label}</button>)}</div>
       <div className="inspector-content">
-        {inspector.mode === 'preview' && <DomainContent kind={inspector.kind} branch={branch} data={data} allData={allData} mutate={mutate} unavailable={!available(inspector.kind)} preview/>}
-        {inspector.mode === 'state' && <div className="state-editor">{warnings.length > 0 && <details open className="reference-warnings"><summary>Черновик: предупреждений о ссылках — {warnings.length}</summary><p>JSON можно сохранить. Эти ссылки нужно проверить перед использованием материала.</p>{warnings.map(w => <p key={w.path + w.target}><code>{w.path}</code> → {w.target}: {w.message}</p>)}</details>}<p className="inspector-note">{resolved.historical ? 'Сохранённый фактический State выбранного момента. Исторические данные доступны только для просмотра.' : 'Последний тестовый State. Прямое редактирование не создаёт события и не переписывает сохранённую историю.'}</p>{available(inspector.kind) ? <JsonEdit value={data[inspector.kind]} readOnly={resolved.historical} onSave={value => { const next = replaceContentState(liveData, inspector.kind, value); if (!next) return false; setData(() => next); return true }} /> : <p className="history-notice">Для этого момента нет сохранённого State.</p>}</div>}
+        {inspector.mode === 'preview' && <DomainContent kind={inspector.kind} branch={inspectedBranch} data={inspectedData} allData={allData} mutate={inspectedMutate} unavailable={!inspectedAvailable(inspector.kind)} preview/>}
+        {inspector.mode === 'state' && <div className="state-editor">{inspectedWarnings.length > 0 && <details open className="reference-warnings"><summary>Черновик: предупреждений о ссылках — {inspectedWarnings.length}</summary><p>JSON можно сохранить. Эти ссылки нужно проверить перед использованием материала.</p>{inspectedWarnings.map(w => <p key={w.path + w.target}><code>{w.path}</code> → {w.target}: {w.message}</p>)}</details>}<p className="inspector-note">{inspectedSnapshot.historical ? 'Сохранённый фактический State выбранного момента. Исторические данные доступны только для просмотра.' : 'Последний тестовый State. Прямое редактирование не создаёт события и не переписывает сохранённую историю.'}</p>{inspectedAvailable(inspector.kind) ? <JsonEdit value={inspectedData[inspector.kind]} readOnly={inspectedSnapshot.historical} onSave={value => { const next = replaceContentState(inspectedLive, inspector.kind, value); if (!next) return false; if(inspectedId){setContextCopies(prev=>inspectedId==='A'||inspectedId==='B'?prev:{...prev,[inspectedId]:{...prev[inspectedId],state:next}});if(inspectedId==='A'||inspectedId==='B')setBranchData(prev=>({...prev,[inspectedId]:next}))}else setData(() => next); return true }} /> : <p className="history-notice">Для этого момента нет сохранённого State.</p>}</div>}
         {inspector.mode === 'schema' && <div><p className="inspector-note">JSON Schema — допустимая форма данных, <strong>не список существующих экземпляров</strong>.</p><pre className="state-pre">{stringify(SCHEMAS[inspector.kind])}</pre></div>}
-        {(inspector.mode === 'state' || inspector.mode === 'schema') && (inspector.mode === 'schema' || available(inspector.kind)) && <ProjectionReferences kind={inspector.kind} mode={inspector.mode} branch={branch} data={data} allData={allData} onJump={kind => setInspector({ kind, mode: inspector.mode })}/>}
-        {inspector.mode === 'history' && <StateHistory kind={inspector.kind} branch={branch} data={liveData} allData={branchData} onSelectEvent={id => mutate(d => { d.events.selectedId = id; d.history.selectedRevisionId = null })}/>}
+        {(inspector.mode === 'state' || inspector.mode === 'schema') && (inspector.mode === 'schema' || inspectedAvailable(inspector.kind)) && <ProjectionReferences kind={inspector.kind} mode={inspector.mode} branch={inspectedBranch} data={inspectedData} allData={allData} onJump={kind => setInspector({...inspector,kind, mode: inspector.mode })}/>}
+        {inspector.mode === 'history' && <StateHistory kind={inspector.kind} branch={inspectedBranch} data={inspectedLive} allData={branchData} onSelectEvent={id => inspectedMutate(d => { d.events.selectedId = id; d.history.selectedRevisionId = null })}/>}
         </div>
-      <div className="catalog-actions"><span>Открыто на этом экране: {actions.countOnScreen(inspector.kind)}</span>{!actions.canAddOnScreen(inspector.kind) ? <button className="minor-btn" onClick={() => { actions.openContent(inspector.kind); setInspector(null) }}>Перейти к существующему окну</button> : <button className="primary-btn" onClick={() => { actions.createWindow(inspector.kind); setInspector(null) }}>+ Открыть в новом окне</button>}</div>
+      <div className="catalog-actions"><span>Открыто на этом экране: {actions.countOnScreen(inspectedContentId(inspector.kind))}</span>{!actions.canAddOnScreen(inspectedContentId(inspector.kind)) ? <button className="minor-btn" onClick={() => { actions.openContent(inspectedContentId(inspector.kind)); setInspector(null) }}>Перейти к существующему окну</button> : <button className="primary-btn" onClick={() => { actions.createWindow(inspectedContentId(inspector.kind)); setInspector(null) }}>+ Открыть в новом окне</button>}</div>
       </div></div>
     </section></div>}
 
     </>
   )
-  return {
+  const legacyProfile: WorkspaceProfile = {
     id: 'architecture-simulator',
     title: 'Architecture Simulator',
     subtitle: 'PT-006 · scripted content fixture',
@@ -118,4 +222,51 @@ export function useSimulatorProfile(): WorkspaceProfile {
     openInspector,
     resetContent: () => { setData(() => structuredClone(branch === 'A' ? initialData : initialDataB)); setInspector(null) },
   }
+  const sharedProfile:WorkspaceProfile={
+    id:'architecture-simulator',
+    title:'Architecture Simulator',
+    subtitle:'Workspace · независимые Context',
+    descriptors:contextIds.flatMap(id=>scopeDescriptors(id,contextCopies[id]?.templateId==='minimal-planning'?[NOTES_DESCRIPTOR]:CONTENT)),
+    initialWorkspace:sharedInitialWorkspace,
+    contextId:'workspace',
+    contexts:['workspace'],
+    layoutKey:()=>STORAGE_SHARED_LAYOUT,
+    legacyLayoutKey:()=>'', // A/B layouts are imported as copies; their original keys are untouched.
+    migrateLayout:()=>null,
+    renderHeader:()=> <div className="branch-switch" role="group" aria-label="Рабочие контексты">
+      {contextIds.map(id=><span key={id} className="context-name" title={id}>Context {id}</span>)}
+    </div>,
+    renderFactualTime:()=> <div className="factual-time-bar"><span>Context A и B — независимые источники; копии сохраняют собственный State · Comparison пока профильный A/B.</span></div>,
+    renderContent:renderContextContent,
+    renderPanelTools:(value:string)=>{
+      const ref=parseScopedContentId(value)
+      if(!ref||ref.resourceId==='notes')return null
+      const show=(mode:InspectorMode)=>setInspector({kind:ref.resourceId as ContentKind,mode,contextId:ref.contextId})
+      return <div className="edge-actions">
+        <button title="Предпросмотр" aria-label="Предпросмотр" onClick={()=>show('preview')}>◉</button>
+        <button title="Фактический State" aria-label="Фактический State" onClick={()=>show('state')}>{'{}'}</button>
+        <button title="JSON Schema" aria-label="JSON Schema" onClick={()=>show('schema')}>▤</button>
+        <button title="История State" aria-label="История State" onClick={()=>show('history')}>↶</button>
+      </div>
+    },
+    renderInspector,
+    openInspector:(value,mode)=>{
+      const ref=parseScopedContentId(value)
+      if(ref&&contextIds.includes(ref.contextId))setInspector({kind:ref.resourceId as ContentKind,mode,contextId:ref.contextId})
+    },
+    resetContent:()=>{setInspector(null)}, // never erase context data when resetting only the shared screen layout
+    resetScope:'layout-only',
+    createContext,
+    contextTemplateOptions:[
+      {id:'architecture-evolution',title:'Эволюция архитектуры',description:'Независимый State и комплект четырёх экранов'},
+      {id:'minimal-planning',title:'Минимальный контекст',description:'Один экран с требованиями и заметками, без History'},
+    ],
+    resolveContentAddress:target=>{
+      const contextId=target.contextId
+      const descriptors=contextCopies[contextId??'']?.templateId==='minimal-planning'?[NOTES_DESCRIPTOR]:CONTENT
+      return contextId&&contextIds.includes(contextId)&&descriptors.some(d=>d.id===target.instanceId)
+        ?scopedContentId(contextId,target.instanceId):null
+    },
+  }
+  return {...legacyProfile,shared:sharedProfile}
 }

@@ -133,6 +133,7 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
   const [fitArmed,setFitArmed]=useState<string|null>(null)
   const [settingsOpen,setSettingsOpen]=useState(false)
   const [screenMenu,setScreenMenu]=useState<{left:number}|null>(null)
+  const [contextMenu,setContextMenu]=useState(false)
   const [fitGap,setFitGap]=useState(restoreGap)
   const [viewMode,setViewMode]=useState(()=>{try{return localStorage.getItem(VIEW_KEY)==='1'}catch{return false}})
   const [flashes,setFlashes]=useState<Record<string,number>>({})
@@ -180,7 +181,14 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
     window.addEventListener('keydown',escape)
     return ()=>{window.removeEventListener('pointerdown',dismiss);window.removeEventListener('keydown',escape)}
   },[screenMenu])
-  useEffect(()=>{setFocused(null);setPicker(null);setFitArmed(null);setRename(false);setScreenMenu(null);profile.onContextChanged?.()},[profile.contextId])
+  useEffect(()=>{
+    if(!contextMenu)return
+    const close=(event:PointerEvent)=>{if(event.target instanceof Element&&!event.target.closest('.context-create-menu, .create-context'))setContextMenu(false)}
+    const escape=(event:KeyboardEvent)=>{if(event.key==='Escape')setContextMenu(false)}
+    window.addEventListener('pointerdown',close);window.addEventListener('keydown',escape)
+    return ()=>{window.removeEventListener('pointerdown',close);window.removeEventListener('keydown',escape)}
+  },[contextMenu])
+  useEffect(()=>{setFocused(null);setPicker(null);setFitArmed(null);setRename(false);setScreenMenu(null);setContextMenu(false);profile.onContextChanged?.()},[profile.contextId])
   const {startDrag,hovered,ghost,notice,setNotice,draggedId,previewRect}=useWindowDrag({
     screen,workspace,board,stage,armedPanelId:fitArmed,fitGap,onFitted:()=>setFitArmed(null),update:modify,
   })
@@ -199,7 +207,8 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
   const dispatch=(event:WorkspaceEvent)=>{
     if(event.type!=='open-content') return
     if(event.target.profileId!==profile.id) {setNotice('Профиль недоступен: '+event.target.profileId);return}
-    const resolved=ops.openContent(workspace,event.target.instanceId,nextWindowId())
+    const contentId=profile.resolveContentAddress?.(event.target) ?? (profile.resolveContentAddress ? null : event.target.instanceId)
+    const resolved=contentId ? ops.openContent(workspace,contentId,nextWindowId()) : null
     if(!resolved) {setNotice('Содержимое недоступно: '+event.target.instanceId);return}
     modify(()=>resolved.workspace)
     showWindow(resolved.screenId,resolved.panelId)
@@ -232,14 +241,33 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
     setPicker(null);setFocused(null);setFitArmed(null);setNotice(null)
   }
   const addBlankScreen=()=>finishNewScreen(ops.addScreen(workspace,screenId('screen')))
+  const addContext=(templateId?:string)=>{
+    setContextMenu(false)
+    const created=profile.createContext?.(templateId)
+    if(!created)return
+    const expanded=createWorkspaceModel([...profile.descriptors,...created.descriptors])
+    const next=expanded.addScreensFromTemplates(workspace,created.templates,screenId)
+    if(next)created.commit() // Never save a Context unless its complete screen bundle was accepted.
+    finishNewScreen(next)
+  }
   const copyCurrentScreen=()=>finishNewScreen(ops.duplicateScreen(workspace,screen.id,screenId))
   const toggleScreenMenu=(button:HTMLButtonElement)=>{
     if(screenMenu){setScreenMenu(null);return}
     const bounds=button.getBoundingClientRect()
     setScreenMenu({left:Math.max(12,Math.min(bounds.left,window.innerWidth-344))})
     setSettingsOpen(false)
+    setContextMenu(false)
   }
-  const reset=()=>{if(window.confirm('Сбросить Workspace и данные текущего профиля?')){modify(()=>structuredClone(profile.initialWorkspace));profile.resetContent();setPicker(null);setFitArmed(null);setNotice(null)}}
+  const reset=()=>{
+    const warning=profile.resetScope==='layout-only'
+      ? 'Сбросить общую раскладку экранов? Данные контекстов останутся сохранёнными.'
+      : 'Сбросить Workspace и данные текущего профиля?'
+    if(window.confirm(warning)){
+      modify(()=>structuredClone(profile.initialWorkspace))
+      if(profile.resetScope!=='layout-only')profile.resetContent()
+      setPicker(null);setFitArmed(null);setNotice(null)
+    }
+  }
   const selectScreen=(id:string)=>{modify(w=>ops.activateScreen(w,id));setFocused(null);setPicker(null);setFitArmed(null);setRename(false)}
   const boardWidth=Math.max(1265,...screen.panels.map(p=>p.rect.x+p.rect.w+45))+(ghost?1800:0)
   // Keep a small panning runway even when every panel initially fits.
@@ -258,12 +286,17 @@ export function WorkspaceShell({profile}: {profile: WorkspaceProfile}) {
         <button className="screen-create-option" onClick={copyCurrentScreen}><strong>⧉ Копия текущего</strong><small>Копирует окна и расположение, данные остаются общими</small></button>
       </section>}
       <div className="header-actions">
+        {profile.createContext&&<button className="header-btn create-context" aria-expanded={contextMenu} onClick={()=>profile.contextTemplateOptions?.length?setContextMenu(v=>!v):addContext()}>+ Контекст</button>}
         <button className="header-btn" onClick={()=>createWindow()}>+ Окно</button>
         <button className="header-btn highlighted" onClick={()=>profile.openInspector(profile.descriptors[0]?.id??'','schema')}>▦ Каталог / инспектор</button>
         <button className={'header-btn '+(viewMode?'highlighted':'')} aria-pressed={viewMode} onClick={()=>{setViewMode(v=>!v);setPicker(null);setFitArmed(null)}}>{viewMode?'Обычный режим':'Просмотр'}</button>
         <button className="header-btn settings-trigger" aria-expanded={settingsOpen} aria-controls="workspace-settings" onClick={()=>setSettingsOpen(v=>!v)}><span className="settings-gear" aria-hidden="true">⚙</span><span className="settings-label"> Настройки</span></button>
         <button className="header-btn subdued" onClick={reset} title="Сбросить демо">↺</button>
       </div>
+      {contextMenu&&profile.contextTemplateOptions&&<section className="screen-create-menu context-create-menu" role="dialog" aria-label="Создать контекст" style={{right:24,left:'auto'}}>
+        <div className="screen-create-title"><strong>Шаблон контекста</strong><button aria-label="Закрыть шаблоны контекста" onClick={()=>setContextMenu(false)}>×</button></div>
+        {profile.contextTemplateOptions.map(item=><button key={item.id} className="screen-create-option" onClick={()=>addContext(item.id)}><strong>{item.title}</strong><small>{item.description}</small></button>)}
+      </section>}
       {settingsOpen&&<section className="settings-popover" id="workspace-settings" role="dialog" aria-label="Настройки рабочего пространства">
         <div className="settings-popover-header"><strong>⚙ Настройки Workspace</strong><button className="settings-close" aria-label="Закрыть настройки" onClick={()=>setSettingsOpen(false)}>×</button></div>
         <label className="settings-field-label" htmlFor="fit-gap-range">Отступ при вписывании</label>

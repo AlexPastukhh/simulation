@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { ContentDescriptor, Workspace, ScreenTemplate, ScreenTemplateBundle } from './workspace.ts'
 
-export type ContentAddress = { profileId: string; instanceId: string }
+export type ContentAddress = { profileId: string; instanceId: string; contextId?: string }
 export type WorkspaceEvent = { type: 'open-content'; target: ContentAddress }
 export type InspectorMode = 'preview' | 'state' | 'schema' | 'history'
 export type InspectorActions = {
@@ -18,6 +18,11 @@ export type WorkspaceProfile = {
   initialWorkspace: Workspace
   screenTemplates?: ScreenTemplate[]
   screenBundles?: ScreenTemplateBundle[]
+  /** A Context Template creates independent profile state, then Shell places its screens atomically. */
+  contextTemplateOptions?: { id: string; title: string; description?: string }[]
+  createContext?: (templateId?: string) => { id: string; descriptors: ContentDescriptor[]; templates: ScreenTemplate[]; commit: () => void } | null
+  /** Map a structured Context resource address to the private layout tab ID. */
+  resolveContentAddress?: (target: ContentAddress) => string | null
   contextId: string
   contexts: string[]
   layoutKey: (contextId: string) => string
@@ -30,5 +35,6 @@ export type WorkspaceProfile = {
   renderInspector: (actions: InspectorActions) => ReactNode
   openInspector: (id: string, mode: InspectorMode) => void
   resetContent: () => void
+  resetScope?: 'layout-only' | 'layout-and-content'
   onContextChanged?: () => void
 }

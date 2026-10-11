@@ -1,17 +1,18 @@
-# src/shell — универсальный Shell
+# src/shell — код универсального Shell
 
-**CURRENT / PT-006: общие операции экранов с копированием, 2026-10-11.** Этот каталог реализует предметно-независимые окна, вкладки, экраны, компоновку и навигацию. Обзор механики и границы реализации: [docs/shell](../../docs/shell/README.md). Текущая роль `Workspace` как раскладки описана в [docs/workspace](../../docs/workspace/README.md).
+**CURRENT / G-CODE-02, 2026-10-11.** Shell содержит общую UI-компоновку, навигацию, механизм создания Context из предоставленного профилем шаблона и проверку адресов. Он **не** содержит типов `DemoStore`, `Actual Event` или `PlanRevision`.
 
-| Файл | Ответственность |
+| Файл | Реализованная ответственность |
 |---|---|
-| [workspace.ts](workspace.ts) | `Workspace v3`: экраны/окна/вкладки, `createWorkspaceModel`, `openContent`, `duplicateScreen`, `addScreensFromTemplates`, размеры и лимиты; профильные рецепты не публикуются в «+ Экран» |
-| [contracts.ts](contracts.ts) | `WorkspaceProfile`, `ContentAddress`, `WorkspaceEvent` |
-| [WorkspaceShell.tsx](WorkspaceShell.tsx) | Shell UI, профильно предоставленное содержимое, экраны, события и сохранение раскладок |
-| [windowDrag.ts](windowDrag.ts) | Перетаскивание, обмен геометрией и вписывание |
-| [styles.css](styles.css) | Общие стили окна и оболочки |
+| [workspace.ts](workspace.ts) | Layout v3: Screen/Panel/Tab, generic add/duplicate, проверка экранных рецептов, поиск и переключение вкладок, геометрия |
+| [contexts.ts](contexts.ts) | `ResourceRef`, `ContextTemplate`, `ContextInstance`, copy-by-default `instantiateContext`, контекстные ID вкладок, безопасный импорт legacy layout |
+| [contracts.ts](contracts.ts) | `WorkspaceProfile`, `ContentAddress` с необязательным `contextId`, `contextTemplateOptions`, `createContext`, `resolveContentAddress` |
+| [WorkspaceShell.tsx](WorkspaceShell.tsx) | Экран/окно/вкладки, «+ Экран», «+ Контекст», атомарное размещение полного набора экранов и подтверждение создания Context |
+| [windowDrag.ts](windowDrag.ts) | Drag/swap/fit с учётом препятствий и размеров |
+| [styles.css](styles.css) | Общий UI |
 
-`open-content` адресует `{profileId,instanceId}` и открывает/подсвечивает вид в **текущей раскладке**, не изменяя предметный State/History. `screenTemplates` и `screenBundles` — опциональные контракты **экранных раскладок**, пока не используемые в меню. Реализованное «+ Экран» предлагает только пустой экран/копию; `addScreensFromTemplates` остаётся готовой общей модельной операцией для будущего Context Template. [План следующего шага](../../docs/workspace/NEXT_CODE_PLAN_CANDIDATE.md). Shell получает **один активный профиль**.
+В прежнем режиме `open-content` использует `{profileId,instanceId}`. Для общего Workspace адрес может включать `contextId`; только профиль разрешает его во внутренний `context/<contextId>/<resourceId>` ключ вкладки. Нельзя подменять неизвестную цель другим Context. Два экземпляра одного вида в разных Context считаются разными адресованными ресурсами.
 
-**Не реализовано:** универсальные Context Instances и ResourceRefs с `contextId`, многопрофильный runtime, Scope Mechanisms и cross-profile инструменты. Их [кандидатная модель](../../docs/workspace/CANDIDATE_MODEL.md) не является частью нынешнего контракта.
+В `App.tsx` по-прежнему **один профиль**; подключается либо legacy-представление, либо общий Workspace этого же профиля. Межпрофильный runtime, универсальные Scope Mechanisms, ready/manual Scope-композиции и view-local persisted selections **не реализованы**.
 
-[Главный README](../../README.md) · [Документация профилей](../../docs/profiles/README.md).
+[Подробное описание Shell](../../docs/shell/README.md) · [Работа с Workspace](../../docs/workspace/README.md) · [Профили](../../docs/profiles/README.md).

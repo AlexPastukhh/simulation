@@ -1,18 +1,18 @@
 # src/profiles/architecture-simulator — предметный профиль
 
-**CURRENT / PT-006: профиль и тематические начальные экраны, 2026-10-11.** Этот каталог — конкретное применение Shell, а не обязательная модель для всех профилей. [Вход в документацию симулятора](../../../docs/profiles/architecture-simulator/README.md).
+**CURRENT / G-CODE-02.** Конкретная реализация симуляции архитектуры A/B поверх Shell. Не универсальный владелец механизмов Workspace. [Документация профиля](../../../docs/profiles/architecture-simulator/README.md).
 
-**Основные предметные источники:** [система контента, факты и связи](../../../docs/architecture-simulator/CONTENT_SYSTEM.md) · [18 видов](../../../docs/architecture-simulator/CONTENT_VIEWS.md). Общие окна, вкладки, навигация и ограничения Shell: [docs/shell](../../../docs/shell/README.md).
-
-| Файлы | Назначение |
+| Файл | Реализованная роль |
 |---|---|
-| [SimulatorProfile.tsx](SimulatorProfile.tsx) | Подключение, A/B, хранение предметного State, выбор исторического момента, инспектор |
-| [workspace.ts](workspace.ts) | Регистрация 18 видов, четыре тематических стартовых экрана, миграция старого layout; `SCREEN_TEMPLATES` (4) и `SCREEN_BUNDLES` (набор) подготовлены в коде, но не показываются через «+ Экран» |
-| [content.ts](content.ts), [material.ts](material.ts), [extraContent.ts](extraContent.ts) | State, JSON Schema, авторский сценарий, проекции |
-| [history.ts](history.ts), [references.ts](references.ts) | Подготовленная история событий/PlanRevision и диагностика ссылок |
-| [DomainContent.tsx](DomainContent.tsx), [AdditionalContent.tsx](AdditionalContent.tsx), [MaterialContent.tsx](MaterialContent.tsx), [HistoryContent.tsx](HistoryContent.tsx) | Отображение контента |
-| [styles.css](styles.css) | Предметные стили |
+| [SimulatorProfile.tsx](SimulatorProfile.tsx) | Подготовленный A/B `DemoStore`, `content-v6` и `layout-v3`, два UI режима, независимые Context copies, минимальные заметки без History, сохранение `context-copies-v1` и разрешение адреса контента |
+| [workspace.ts](workspace.ts) | 18 зарегистрированных предметных видов, четыре начальных тематических экрана, `SCREEN_TEMPLATES` и `SCREEN_BUNDLES` как рецепты, миграция старого layout |
+| [content.ts](content.ts), [material.ts](material.ts), [extraContent.ts](extraContent.ts) | State/Schema, авторский сценарий и производные виды |
+| [history.ts](history.ts), [references.ts](references.ts) | История и диагностика ссылок |
+| [DomainContent.tsx](DomainContent.tsx), [AdditionalContent.tsx](AdditionalContent.tsx), [MaterialContent.tsx](MaterialContent.tsx), [HistoryContent.tsx](HistoryContent.tsx) | Предметные представления |
+| [styles.css](styles.css) | Предметные стили, в том числе редактор минимального Context |
 
-Данные A/B сохраняются как `pt006-simulator-content-[A|B]-v6`, layout Shell — `pt006-simulator-layout-[A|B]-v3`. Переход `open-content` не исполняет Step, не добавляет Actual Events и не переписывает архив. Новые стартовые экраны и generic копия повторно используют существующие виды, не меняя State/History. Профильные рецепты сохранены **для следующей реализации Context Template**, но в текущем меню «+ Экран» нет предметных шаблонов; [план дальнейшей итерации](../../../docs/workspace/NEXT_CODE_PLAN_CANDIDATE.md).
+**«⊞ Общий Workspace»** позволяет иметь обычные Architecture views A и B на одном экране. **«+ Контекст»** предоставляет два рецепта: «Эволюция архитектуры» с отдельным State и комплектом четырёх экранов или «Минимальный контекст» с заметками без History. Копии содержимого сохраняются в `pt006-simulator-context-copies-v1`, общий layout — в `pt006-simulator-multicontext-layout-v1`; старые A/B ключи не удаляются.
 
-**CANDIDATE, не реализовано:** один Context Template из четырёх экранов, готовые/создаваемые Context Instances, межконтекстные и профильные Scope Mechanisms. Подробнее: [кандидатная модель](../../../docs/workspace/CANDIDATE_MODEL.md). Настоящего Markdown-профиля в PT-006 нет.
+Навигация `open-content` внутри контекстного вида передаёт `contextId`, не смешивая A и B. Но нынешний `comparison` всё ещё читает `allData.A/B` напрямую: превращение его в настроенный Scope Mechanism относится к **G-CODE-03**. До G-CODE-04 нет второго настоящего профиля.
+
+[Система контента](../../../docs/architecture-simulator/CONTENT_SYSTEM.md) · [18 видов](../../../docs/architecture-simulator/CONTENT_VIEWS.md) · [план дальнейших групп](../../../docs/workspace/NEXT_CODE_PLAN_CANDIDATE.md).
