@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { INITIAL_WORKSPACE, activateScreen, addContent, addPanel, addScreen, canAddContent, changeRect, countContent, currentScreen, removeContent, removePanel, removeScreen, swapPanels, findFreeFitRect, undersized, validateWorkspace, migrateLegacyWorkspace } from '../src/workspace.ts'
+import { INITIAL_WORKSPACE, activateScreen, addContent, addPanel, addScreen, canAddContent, changeRect, countContent, currentScreen, removeContent, removePanel, removeScreen, swapPanels, findFreeFitRect, undersized, validateWorkspace, migrateLegacyWorkspace } from '../src/profiles/architecture-simulator/workspace.ts'
 
 const seed = () => structuredClone(INITIAL_WORKSPACE)
 test('default workspace is valid and has four independent screens', () => {

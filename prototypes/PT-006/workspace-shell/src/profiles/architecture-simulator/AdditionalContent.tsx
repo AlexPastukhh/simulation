@@ -1,18 +1,21 @@
 import type { Branch, DemoStore } from './content.ts'
+import type { WorkspaceEvent } from '../../shell/contracts.ts'
+import type { ContentKind } from './workspace.ts'
 import { knownRequirements } from './content.ts'
 import type { ExtraKind } from './extraContent.ts'
 import { actualImpacts, changesFor, navigationEvents, resolveSnapshot } from './history.ts'
 import { ChangeList } from './HistoryContent.tsx'
 import { ScenarioContextView, ForecastDetails, ForecastRequirement } from './MaterialContent.tsx'
 
-type Props = { kind: ExtraKind; branch: Branch; data: DemoStore; allData: Record<Branch, DemoStore>; mutate: (fn: (draft: DemoStore) => void) => void; preview?: boolean }
+type Props = { kind: ExtraKind; branch: Branch; data: DemoStore; allData: Record<Branch, DemoStore>; mutate: (fn: (draft: DemoStore) => void) => void; preview?: boolean; onWorkspaceEvent?: (event: WorkspaceEvent) => void }
 const Badge = ({ children }: { children: React.ReactNode }) => <span className="sim-tag">{children}</span>
 const Section = ({ title, desc }: { title: string; desc?: string }) => <div className="sim-extra-heading"><b>{title}</b>{desc && <small>{desc}</small>}</div>
 const Line = ({ primary, secondary }: { primary: string; secondary?: string }) => <div className="sim-row"><strong>{primary}</strong>{secondary && <p>{secondary}</p>}</div>
 export function isExtraKind(kind: string): kind is ExtraKind {
   return ['scenario','current','architecturePlan','forecasts','axes','hotpaths','explorer','comparison','trace','impactHistory'].includes(kind)
 }
-export function AdditionalContent({ kind, branch, data, allData, mutate, preview = false }: Props) {
+export function AdditionalContent({ kind, branch, data, allData, mutate, preview = false, onWorkspaceEvent }: Props) {
+  const openView = (id: ContentKind) => { if (!preview) onWorkspaceEvent?.({type:'open-content',target:{profileId:'architecture-simulator',instanceId:id}}) }
   const patch = (fn: (d: DemoStore) => void) => { if (!preview) mutate(fn) }
   const events = navigationEvents(data)
   if (kind === 'scenario') return <div className="sim-content">
@@ -39,6 +42,7 @@ export function AdditionalContent({ kind, branch, data, allData, mutate, preview
       {section === 'architecture' && <><Section title={'Снимок '+data.architecture.currentRef} />{snapshot?.responsibilities.map(x => <Line key={x.id} primary={x.name} secondary={x.id+' · '+x.concern}/>)}</>}
       {section === 'requirements' && <><Section title={'Известно требований: '+reqs.length} />{reqs.map(r => <Line key={r.id} primary={r.title} secondary={r.id+' · '+r.source}/>)}</>}
       {section === 'implementation' && <><Section title="Файлы CURRENT" />{data.implementation.files.map(f => <Line key={f.path} primary={f.path} secondary={f.responsibility+' · '+f.status}/>)}</>}
+      <button className="minor-btn workspace-open-link" onClick={() => openView(section === 'architecture' ? 'architecture' : section === 'requirements' ? 'requirements' : 'implementation')}>Открыть подробный вид ↗</button>
       <p className="sim-hint">Требования, архитектура и файлы соответствуют выбранному фактическому моменту. Выбор планового Step не исполняет его.</p>
     </div>
   }

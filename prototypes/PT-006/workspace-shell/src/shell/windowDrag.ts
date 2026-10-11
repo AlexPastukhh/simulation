@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react'
-import { changeRect, findFreeFitRect, swapPanels } from './workspace.ts'
+import { createWorkspaceModel } from './workspace.ts'
+const { changeRect, findFreeFitRect, swapPanels } = createWorkspaceModel([])
 import type { Panel, Rect, Screen, Workspace } from './workspace.ts'
 
 type Ghost = { x: number; y: number; w: number; h: number; fit: boolean }
@@ -85,6 +86,7 @@ export function useWindowDrag({ screen, workspace, board, stage, armedPanelId, f
     const wheel = (evt: WheelEvent) => {
       if (!dragging.current) return
       evt.preventDefault()
+      evt.stopPropagation() // keep drag-board scrolling separate from tab-strip wheel scrolling
       const scale = evt.deltaMode === 1 ? 18 : evt.deltaMode === 2 ? scroll.clientHeight : 1
       scroll.scrollBy(evt.deltaX * scale, evt.deltaY * scale)
       requestAnimationFrame(syncPreview)

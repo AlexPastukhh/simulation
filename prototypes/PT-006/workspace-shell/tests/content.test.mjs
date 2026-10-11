@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { initialData, initialDataB, SCHEMAS, matchesSchema, replaceContentState, validateDemo, migrateLegacyDemo, knownRequirements } from '../src/content.ts'
-import { CONTENT, INITIAL_WORKSPACE } from '../src/workspace.ts'
+import { initialData, initialDataB, SCHEMAS, matchesSchema, replaceContentState, validateDemo, migrateLegacyDemo, knownRequirements } from '../src/profiles/architecture-simulator/content.ts'
+import { CONTENT, INITIAL_WORKSPACE } from '../src/profiles/architecture-simulator/workspace.ts'
 
 test('content catalog contains simulator surfaces, not object and collection data primitives', () => {
   assert.deepEqual(CONTENT.map(d => d.id), ['events', 'plan', 'requirements', 'architecture', 'impact', 'implementation', 'fitness', 'work', 'scenario', 'current', 'architecturePlan', 'forecasts', 'axes', 'hotpaths', 'explorer', 'comparison', 'trace', 'impactHistory'])
@@ -120,7 +120,7 @@ test('historical generic demo state is not upgraded as domain evidence', () => {
 })
 
 test('projection schemas expose referenced canonical model State without duplicating source facts', async () => {
-  const { EXTRA_SOURCES } = await import('../src/extraContent.ts')
+  const { EXTRA_SOURCES } = await import('../src/profiles/architecture-simulator/extraContent.ts')
   // The UI uses the extra-source table to render original source State and schema.
   for (const [projection, sources] of Object.entries(EXTRA_SOURCES)) {
     assert.ok(CONTENT.some(d => d.id === projection))
@@ -135,7 +135,7 @@ test('projection schemas expose referenced canonical model State without duplica
   assert.equal(EXTRA_SOURCES.impactHistory.includes('impact'), true)
 })
 test('sample screen layouts together expose every content type, including new ones', async () => {
-  const { INITIAL_WORKSPACE } = await import('../src/workspace.ts')
+  const { INITIAL_WORKSPACE } = await import('../src/profiles/architecture-simulator/workspace.ts')
   const visible = new Set(INITIAL_WORKSPACE.screens.flatMap(s => s.panels.flatMap(p => p.tabs)))
   assert.deepEqual([...visible].sort(), CONTENT.map(d => d.id).sort())
 })

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { initialData, initialDataB, replaceContentState, migrateLegacyDemo, validateDemo } from '../src/content.ts'
-import { atCursor, plannedView, changesFor, diffState, actualImpacts } from '../src/history.ts'
+import { initialData, initialDataB, replaceContentState, migrateLegacyDemo, validateDemo } from '../src/profiles/architecture-simulator/content.ts'
+import { atCursor, plannedView, changesFor, diffState, actualImpacts } from '../src/profiles/architecture-simulator/history.ts'
 
 test('earlier factual cursor restores architecture, files, requirements, work and Plan together', () => {
   const data = structuredClone(initialData)

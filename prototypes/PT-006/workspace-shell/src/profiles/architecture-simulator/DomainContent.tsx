@@ -1,4 +1,5 @@
 import type { ContentKind } from './workspace.ts'
+import type { WorkspaceEvent } from '../../shell/contracts.ts'
 import { knownRequirements } from './content.ts'
 import { AdditionalContent, isExtraKind } from './AdditionalContent.tsx'
 import type { Branch, DemoStore } from './content.ts'
@@ -7,15 +8,16 @@ import { PlanHistory } from './HistoryContent.tsx'
 import { PlanActivities, ForecastDetails, ForecastRequirement, WorkDetails } from './MaterialContent.tsx'
 
 export type Mutate = (fn: (draft: DemoStore) => void) => void
-type Props = { kind: ContentKind; branch: Branch; data: DemoStore; allData: Record<Branch, DemoStore>; mutate: Mutate; preview?: boolean; unavailable?: boolean }
+type Props = { kind: ContentKind; branch: Branch; data: DemoStore; allData: Record<Branch, DemoStore>; mutate: Mutate; preview?: boolean; unavailable?: boolean; onWorkspaceEvent?: (event: WorkspaceEvent) => void }
 const Tag = ({ children, tone = '' }: { children: React.ReactNode; tone?: string }) => <span className={'sim-tag '+tone}>{children}</span>
 const Hint = ({ children }: { children: React.ReactNode }) => <p className="sim-hint">{children}</p>
 const Row = ({ title, meta, children }: { title: string; meta?: string; children?: React.ReactNode }) => <article className="sim-row"><div className="sim-row-main"><strong>{title}</strong>{meta && <small>{meta}</small>}</div>{children}</article>
 
-export function DomainContent({ kind, branch, data: factualData, allData, mutate, preview = false, unavailable = false }: Props) {
+export function DomainContent({ kind, branch, data: factualData, allData, mutate, preview = false, unavailable = false, onWorkspaceEvent }: Props) {
   if (unavailable && kind !== 'events') return <div className="sim-content"><p className="history-notice">Для выбранного события нет сохранённого состояния. Выберите доступный снимок в истории или вернитесь к последнему State.</p></div>
   const data = ['plan', 'architecture', 'architecturePlan', 'forecasts', 'axes', 'impact', 'implementation', 'fitness', 'impactHistory'].includes(kind) ? plannedView(factualData) : factualData
-  if (isExtraKind(kind)) return <AdditionalContent kind={kind} branch={branch} data={data} allData={allData} mutate={mutate} preview={preview} />
+  if (isExtraKind(kind)) return <AdditionalContent kind={kind} branch={branch} data={data} allData={allData} mutate={mutate} preview={preview} onWorkspaceEvent={onWorkspaceEvent}/>
+  const openView = (target: ContentKind) => { if (!preview) onWorkspaceEvent?.({type:'open-content',target:{profileId:'architecture-simulator',instanceId:target}}) }
   const selectedStep = data.plan.steps.find(s => s.id === data.plan.selectedStepId)
   const chosenImpact = data.impact.records.find(i => i.id === data.impact.selectedImpactId)
   const snapshotContext = data.architecture.selectedContext ?? (data.architecture.selectedRef === data.architecture.currentRef ? 'actual' : 'planned')
@@ -42,6 +44,7 @@ export function DomainContent({ kind, branch, data: factualData, allData, mutate
       <span className="sim-date">{e.day}</span><span className="sim-event-text"><strong>{e.label}</strong><small>{e.id} · {e.provenance}</small></span>
       <span className="sim-kind">{e.kind}</span>
     </button>)}
+    <button className="minor-btn workspace-open-link" onClick={() => openView('explorer')}>Открыть разбор события в Explorer ↗</button>
     <div className="sim-detail"><Tag tone="actual">ACTUAL</Tag><span>Выбран: {data.events.selectedId ?? 'последний доступный'}</span></div>
     <Hint>Выбранный момент раскрывает сохранённый State требований, архитектуры, файлов, работ и Plan. История ограничена подготовленными событиями тестового сценария.</Hint>
   </div>
@@ -52,6 +55,7 @@ export function DomainContent({ kind, branch, data: factualData, allData, mutate
       {heading('Requirement Model', items.length+' известных')}
       <Hint>Ненормализованные фактические требования. Прогнозы Plan не попадают сюда автоматически.</Hint>
       {items.map(item => <Row key={item.id} title={item.title} meta={item.id+' · '+item.source}><p>{item.description}</p></Row>)}
+      <button className="minor-btn workspace-open-link" onClick={() => openView('trace')}>Открыть связи требований ↗</button>
       {heading('Прочие объекты State')}
       <div className="sim-stat-grid"><div><b>{data.requirements.screens.length}</b><small>screens</small></div><div><b>{data.requirements.apiEndpoints.length}</b><small>apiEndpoints</small></div></div>
       <Hint>Тип API Endpoint возможен по JSON Schema, но в этом фактическом State экземпляров может быть ноль.</Hint>
@@ -91,6 +95,7 @@ export function DomainContent({ kind, branch, data: factualData, allData, mutate
     <div className="sim-node-grid">{snapshot.responsibilities.map(item => <div className="sim-node" key={item.id}><Tag>{item.id}</Tag><strong>{item.name}</strong><small>{item.concern}</small></div>)}</div>
     {heading('Связи')}
     {snapshot.connections.map((link, i) => <div className="sim-connection" key={i}>{link.from} <span>→</span> {link.to}</div>)}
+    <button className="minor-btn workspace-open-link" onClick={() => openView('impactHistory')}>Открыть историю архитектурных изменений ↗</button>
     <div className="sim-detail"><Tag>CURR</Tag><span>Фактический snapshot: {data.architecture.currentRef}</span></div>
   </div>
 
@@ -113,6 +118,7 @@ export function DomainContent({ kind, branch, data: factualData, allData, mutate
     <div className="sim-files">{data.implementation.files.map(file => <div className="sim-file" key={file.path}><span>▤</span><div><strong>{file.path}</strong><small>{file.responsibility} · {file.status}</small></div></div>)}</div>
     {heading('Planned file effects')}
     {data.implementation.plannedEffects.map(effect => <Row key={effect.stepId+effect.path} title={effect.path} meta={effect.stepId}><Tag tone="forecast">{effect.effect}</Tag></Row>)}
+    <button className="minor-btn workspace-open-link" onClick={() => openView('impactHistory')}>Открыть историю изменений файлов ↗</button>
     <Hint>Плановые CREATE/MODIFY здесь не означают наличия файла в CURRENT.</Hint>
   </div>
 
@@ -140,6 +146,7 @@ export function DomainContent({ kind, branch, data: factualData, allData, mutate
     <WorkDetails data={data}/>
     {heading('Actual Hot Paths')}
     {data.work.actualHotPaths.map(path => <Row key={path.path} title={path.path} meta={'Изменений: '+path.touches}><p>{path.note}</p></Row>)}
+    <div className="workspace-links"><button className="minor-btn" onClick={() => openView('fitness')}>Открыть Evolution Fitness ↗</button><button className="minor-btn" onClick={() => openView('hotpaths')}>Открыть Actual Hot Paths ↗</button></div>
     <Hint>Наблюдавшийся Actual Hot Path не заменяет прогноз Planned Change Axis из Plan.</Hint>
   </div>
 }

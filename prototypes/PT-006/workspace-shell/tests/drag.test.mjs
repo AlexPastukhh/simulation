@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { edgeScrollVelocity, draggedRectAt } from '../src/windowDrag.ts'
+import { edgeScrollVelocity, draggedRectAt } from '../src/shell/windowDrag.ts'
 
 test('drag held near any viewport edge produces auto-scroll in either axis', () => {
   assert.ok(edgeScrollVelocity(5, 0, 600) < 0)

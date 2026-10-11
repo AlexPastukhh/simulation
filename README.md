@@ -10,7 +10,9 @@
 3. [PT-006: состав и журнал исправлений](prototypes/PT-006/PT006_REMEDIATION_2026-10-10.md): принятый объём, порядок, критерии и фактический статус.
 4. [PT-006 README](prototypes/PT-006/workspace-shell/README.md) и [полный review](prototypes/PT-006/workspace-shell/PT006_independent_content_review_2026-10-10.md).
 5. [Индекс прототипов](prototypes/README.md): исторические проверки и ограничения.
-6. [PT-006: события Workspace, вкладки и режим просмотра](prototypes/PT-006/PT006_WORKSPACE_INTERACTIONS_2026-10-10.md): следующая разрешённая итерация механики Shell; документ подготовлен до кода.
+6. [PT-006: Workspace Events, вкладки, режим просмотра и профили](prototypes/PT-006/PT006_WORKSPACE_INTERACTIONS_2026-10-10.md): WSC-PR-01–04 реализованы в локальном прототипе. Shell выделен отдельно от профиля Architecture Simulator, добавлены переходы к вкладкам, колесо и режим просмотра. 79 тестов, build, lint и ограниченный Edge smoke-test прошли; пользовательская приёмка ещё не выполнена.
+
+Workspace/Shell — универсальная оболочка окон, вкладок и навигации, а Architecture Evolution Simulator — только один профиль её использования. Возможны другие симуляции, Markdown-файлы и другое содержимое. Предметная модель A/B, Plan и Actual Events не должна становиться частью Shell.
 
 ## Предметная модель
 

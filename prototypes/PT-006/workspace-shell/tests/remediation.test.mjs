@@ -1,9 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { initialData, initialDataB, SCHEMAS, matchesSchema, knownRequirements, migrateLegacyDemo, replaceContentState, validateDemo } from '../src/content.ts'
-import { atCursor, navigationEvents, plannedView, resolveSnapshot, diffState, changesFor, factualValue, historySources } from '../src/history.ts'
-import { referenceWarnings } from '../src/references.ts'
+import { initialData, initialDataB, SCHEMAS, matchesSchema, knownRequirements, migrateLegacyDemo, replaceContentState, validateDemo } from '../src/profiles/architecture-simulator/content.ts'
+import { atCursor, navigationEvents, plannedView, resolveSnapshot, diffState, changesFor, factualValue, historySources } from '../src/profiles/architecture-simulator/history.ts'
+import { referenceWarnings } from '../src/profiles/architecture-simulator/references.ts'
 
 test('archived target and factual CURRENT with the same ID resolve independently', () => {
   const data = structuredClone(initialData)
