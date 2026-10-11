@@ -8,9 +8,9 @@
 1. [SC-001@v5-candidate](SC-001_desired_architecture_simulator_scenario_v5_candidate.md): цель и желаемый пользовательский путь.
 2. [V3A r10 delta](architecture_simulator_proposal_composition_v3a_candidate_r10_pt006_remediation.md): текущая поправка для PT-006; наследует [r9 delta](architecture_simulator_proposal_composition_v3a_candidate_r9_delta.md) и исторический [r7](architecture_simulator_proposal_composition_v3a_candidate_r7.md).
 3. [PT-006: состав и журнал исправлений](prototypes/PT-006/PT006_REMEDIATION_2026-10-10.md): принятый объём, порядок, критерии и фактический статус.
-4. [PT-006 README](prototypes/PT-006/workspace-shell/README.md) и [полный review](prototypes/PT-006/workspace-shell/PT006_independent_content_review_2026-10-10.md).
+4. [PT-006 Workspace Shell — вход](prototypes/PT-006/workspace-shell/README.md), [карта технической документации Shell / Workspace / Profiles](prototypes/PT-006/workspace-shell/docs/README.md) и [исторический полный review](prototypes/PT-006/workspace-shell/PT006_independent_content_review_2026-10-10.md).
 5. [Индекс прототипов](prototypes/README.md): исторические проверки и ограничения.
-6. [PT-006: Workspace Events, вкладки, режим просмотра и профили](prototypes/PT-006/PT006_WORKSPACE_INTERACTIONS_2026-10-10.md): WSC-PR-01–04 реализованы в локальном прототипе. Shell выделен отдельно от профиля Architecture Simulator, добавлены переходы к вкладкам, колесо и режим просмотра. 79 тестов, build, lint и ограниченный Edge smoke-test прошли; пользовательская приёмка ещё не выполнена.
+6. [PT-006: Workspace Events, вкладки, режим просмотра и профили](prototypes/PT-006/PT006_WORKSPACE_INTERACTIONS_2026-10-10.md): WSC-PR-01–04 реализованы в PT-006. **В датированной WSC-итерации 2026-10-10** прошли 79 тестов, build, lint и ограниченный Edge smoke-test; пользовательская приёмка ещё не выполнена.
 
 Workspace/Shell — универсальная оболочка окон, вкладок и навигации, а Architecture Evolution Simulator — только один профиль её использования. Возможны другие симуляции, Markdown-файлы и другое содержимое. Предметная модель A/B, Plan и Actual Events не должна становиться частью Shell.
 
@@ -26,11 +26,11 @@ Workspace/Shell — универсальная оболочка окон, вкл
 - Implementation — вымышленное фактическое дерево файлов плюс отдельные плановые эффекты.
 - A/B имеют общий старт и одинаковые независимые внешние события. Различия последствий имеют авторское объяснение. Нет обязательного победителя или скрытого общего балла.
 
-## Текущий статус и история
+## Исторические проверки и версии
 
 SC-001@v5 и полная V3A composition — candidate. Пользователь разрешил ограниченную итерацию исправлений PT-006 по P6R-PR-01A и P6R-PR-02–06. Это отдельное решение исполнения, не принятие всех candidate схем и FR.
 
-PT-006 обновлён до content-v6. В текущих 18 видах есть оставшийся материал review и исправленная история. На HOST прошли 71 тест, build и lint. Проверены 144 поверхности каталога, 9 исторических срезов и миграция; финальные правки проверены точечно. Результаты и ограничения находятся в журнале PT-006.
+PT-006 обновлён до content-v6. В текущих 18 видах есть оставшийся материал review и исправленная история. На этапе исправления содержимого **2026-10-10** прошёл **71 тест**, build и lint; тогда же проверены 144 поверхности каталога, 9 исторических срезов и миграция. На следующем WSC-этапе **2026-10-10** прошли **79 тестов**. Последняя отдельно проверенная **локальная** (не опубликованная в `main`) итерация экранов **2026-10-11** прошла **86 тестов**, build и lint. Актуальные для опубликованной версии и локальных правок статусы следует различать; детали — в [README PT-006](prototypes/PT-006/workspace-shell/README.md) и датированных журналах.
 
 [Полный review](prototypes/PT-006/workspace-shell/PT006_independent_content_review_2026-10-10.md) описывает версию до исправлений и сохранён как история. Пользовательская проверка удобства, missing V2 и исходная переписка остаются ограничениями. Общие термины: [GLOSSARY](GLOSSARY.md).
 

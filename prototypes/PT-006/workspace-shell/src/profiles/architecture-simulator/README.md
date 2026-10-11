@@ -1,17 +1,18 @@
-# Architecture Evolution Simulator — Content Profile
+# src/profiles/architecture-simulator — предметный профиль
 
-**Смыслы и связи:** [полная карта системы контента](../../../docs/architecture-simulator/CONTENT_SYSTEM.md) и [каталог 18 видов с кодовыми якорями](../../../docs/architecture-simulator/CONTENT_VIEWS.md). Эти документы отражают текущую реализацию и сохраняют ссылки на исходные решения/review; оригинальные исторические записи не заменяются.
+**CURRENT / опубликованный `main`; локальные, ещё не опубликованные экранные изменения отделены ниже.** Этот каталог — конкретное применение Shell, а не обязательная модель для всех профилей. [Вход в документацию симулятора](../../../docs/profiles/architecture-simulator/README.md).
 
-Этот профиль — конкретное применение универсального Workspace Shell, а не его обязательная предметная модель.
+**Основные предметные источники:** [система контента, факты и связи](../../../docs/architecture-simulator/CONTENT_SYSTEM.md) · [18 видов](../../../docs/architecture-simulator/CONTENT_VIEWS.md). Общие окна, вкладки, навигация и ограничения Shell: [docs/shell](../../../docs/shell/README.md).
 
-- `SimulatorProfile.tsx`: точка подключения, управление A/B, State, историческими контекстами, инспектором, источниками и редактированием.
-- `workspace.ts`: 18 зарегистрированных видов содержимого, начальные экраны PT-006, ограничения на экземпляры и миграция старых demo-layout.
-- `content.ts`, `material.ts`, `history.ts`, `extraContent.ts`, `references.ts`: предметные данные, сценарии, архивы, прогнозы, schema и диагностика.
-- `DomainContent.tsx`, `AdditionalContent.tsx`, `MaterialContent.tsx`, `HistoryContent.tsx`: предметные представления.
-- `styles.css`: оформление конкретного симулятора и его инспектора; общий Shell использует отдельный stylesheet.
+| Файлы | Назначение |
+|---|---|
+| [SimulatorProfile.tsx](SimulatorProfile.tsx) | Подключение, A/B, хранение предметного State, выбор исторического момента, инспектор |
+| [workspace.ts](workspace.ts) | Регистрация 18 видов и стартовые 4 экрана, миграция старого layout; **LOCAL UNPUBLISHED:** `SCREEN_TEMPLATES` (4), `SCREEN_BUNDLES` (набор) и новые места экранов |
+| [content.ts](content.ts), [material.ts](material.ts), [extraContent.ts](extraContent.ts) | State, JSON Schema, авторский сценарий, проекции |
+| [history.ts](history.ts), [references.ts](references.ts) | Подготовленная история событий/PlanRevision и диагностика ссылок |
+| [DomainContent.tsx](DomainContent.tsx), [AdditionalContent.tsx](AdditionalContent.tsx), [MaterialContent.tsx](MaterialContent.tsx), [HistoryContent.tsx](HistoryContent.tsx) | Отображение контента |
+| [styles.css](styles.css) | Предметные стили |
 
-Профиль хранит текущий материал в прежних ключах `pt006-simulator-content-[A|B]-v6`. Shell сохраняет существующие `pt006-simulator-layout-[A|B]-v3` без удаления пользовательских изменений. Старые версии контента и layout мигрируют через код профиля.
+Данные A/B сохраняются как `pt006-simulator-content-[A|B]-v6`, layout Shell — `pt006-simulator-layout-[A|B]-v3`. Переход `open-content` не исполняет Step, не добавляет Actual Events и не переписывает архив. **LOCAL UNPUBLISHED:** новый набор экранов размещает существующие виды и не меняет их State/History. Опубликованный `main` не предоставляет это меню; [план будущей итерации](../../../docs/workspace/NEXT_CODE_PLAN_CANDIDATE.md).
 
-Предметные кнопки используют `open-content` по универсальному контракту Shell. Навигация не исполняет Evolution Steps, не меняет фактический CURRENT и не создаёт Actual Events.
-
-Ни Markdown Viewer, ни другая симуляция в этой итерации не добавлены. Универсальность адресов проверена отдельными модульными тестами на двух условных Markdown-документах.
+**CANDIDATE, не реализовано:** один Context Template из четырёх экранов, готовые/создаваемые Context Instances, межконтекстные и профильные Scope Mechanisms. Подробнее: [кандидатная модель](../../../docs/workspace/CANDIDATE_MODEL.md). Настоящего Markdown-профиля в PT-006 нет.
