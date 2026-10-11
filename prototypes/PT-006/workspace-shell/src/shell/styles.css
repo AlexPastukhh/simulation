@@ -66,3 +66,12 @@
 .composition-selectors label{display:grid;gap:6px;color:#bdd0e9;font-size:11px}
 .composition-selectors select{width:100%;padding:8px;border:1px solid #526d91;border-radius:6px;color:#eef5ff;background:#203752}
 .composition-create-menu .compose-submit{background:#244768;border:1px solid #4f78a0}
+
+/* Synthetic Markdown profile: same Shell primitives, no Architecture-specific UI. */
+.markdown-fixture-title{font-size:12px;color:#b7dcd3}
+.markdown-fixture-content{display:grid;gap:14px;padding:20px;color:#dceae8;background:#13222d;min-height:100%}
+.markdown-fixture-content label{display:grid;gap:6px;font-size:12px;color:#add1c7}
+.markdown-fixture-content input,.markdown-fixture-content textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid #608c87;border-radius:6px;background:#1b303c;color:#eff9f7;font:13px/1.5 ui-monospace,Consolas,monospace}
+.markdown-fixture-content textarea{min-height:185px;resize:vertical}
+.markdown-fixture-preview{padding:12px;background:#20313d;border-radius:6px;border:1px solid #45646c}
+.markdown-fixture-preview pre{white-space:pre-wrap;word-wrap:break-word;font:13px/1.5 ui-monospace,Consolas,monospace}

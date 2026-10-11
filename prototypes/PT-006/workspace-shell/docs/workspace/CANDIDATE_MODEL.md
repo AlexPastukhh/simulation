@@ -1,6 +1,6 @@
 # Кандидатная архитектура Workspace, контекстов и Scope Mechanisms
 
-**Статус: CANDIDATE для оставшейся целевой архитектуры; G-CODE-02 и G-CODE-03 реализовали Context и один ограниченный Scope Mechanism.** Уже работают независимые Context, один Context Template из четырёх экранов, минимальный Context без History и одновременное отображение A/B. **Один read-only `architecture-comparison-v1` с явными bindings и готовой/ручной сборкой реализован. Другие Scope Mechanisms, shared-reference writes и межпрофильные операции ещё не реализованы**. Текущий факт описан в [Workspace](README.md), дальнейшие шаги — в [плане](NEXT_CODE_PLAN_CANDIDATE.md). Этот документ сохраняет кандидатный статус всего ещё не принятого архитектурного набора.
+**Статус: CANDIDATE для дальнейшего расширения архитектуры; группы G-CODE-01–04 реализуют оговорённую проверяемую часть.** Уже работают независимые Context, один Context Template из четырёх экранов, минимальный Context без History и одновременное отображение A/B. **Один read-only `architecture-comparison-v1` с явными bindings и готовой/ручной сборкой реализован. Другие Scope Mechanisms, shared-reference writes и одновременный межпрофильный Workspace ещё не реализованы. G-CODE-04 добавил независимый Markdown Fixture и read-only контракт разрешения ресурсов двух профилей**. Текущий факт описан в [Workspace](README.md), дальнейшие шаги — в [плане](NEXT_CODE_PLAN_CANDIDATE.md). Этот документ сохраняет кандидатный статус всего ещё не принятого архитектурного набора.
 
 ## Суть
 
@@ -18,7 +18,7 @@ PROFILE LIBRARY                         WORKSPACE (целевая модель)
 │  ├─ Context Template                   ├─ Context C (например, документы)
 │  │  └─ начальные 4 экрана              ├─ связи и настроенные инструменты
 │  └─ Prepared Context A/B               └─ экраны Workspace
-├─ Markdown Profile (будущий пример)       └─ A Architecture | B Architecture | Compare(A,B)
+├─ Markdown Fixture (CURRENT, отдельный активный профиль)       └─ A Architecture | B Architecture | Compare(A,B)
 └─ межпрофильные определения
                          Shell: открыть, найти, показать, разместить, навигировать
 ```
@@ -65,7 +65,7 @@ src/
       └─ architecture-to-markdown/   # зависимости от нескольких профилей
 ```
 
-Реально создана **только** профильная папка `src/profiles/architecture-simulator/scope-mechanisms/` для Comparison. Папки Shell/integrations из схемы **пока отсутствуют**. Создавать отдельные `general`, `context-specific`, `scenario-specific` следует **только при реальной потребности**, без пустых каталогов.
+Реально создана **только** профильная папка `src/profiles/architecture-simulator/scope-mechanisms/` для Comparison; в Shell есть отдельный read-only [resourceProviders.ts](../../src/shell/resourceProviders.ts), но **папок** Shell/integrations Scope из схемы нет. Markdown Fixture расположен в `src/profiles/markdown-fixture/` без предметных механизмов сравнения. Создавать отдельные `general`, `context-specific`, `scenario-specific` следует **только при реальной потребности**, без пустых каталогов.
 
 **Главное правило принадлежности:** механизм одного профиля может работать между несколькими его контекстами и оставаться в этом профиле; интеграционный механизм относится к отдельной межпрофильной области. Узкие механизмы организуются подпапками по контексту, типу контекста или сценарию. Однако **папка только обозначает специализацию; запрет применения проверяет исполняемый контракт**. Контракт не должен опираться исключительно на совпадение JSON Schema: похожая форма не гарантирует одинакового смысла.
 
@@ -79,9 +79,10 @@ src/
 
 ## Статус и нерешённые развилки
 
-- **CURRENT G-CODE-02:** прежний режим переключаемых A/B раскладок сохранён; в отдельном **общем Workspace** обычные Architecture views A и B доступны **на одном экране**, Context Templates создают независимые копии State, а минимальный Context хранит заметки без History. Реального Markdown Profile ещё нет.
+- **CURRENT G-CODE-02:** прежний режим A/B раскладок сохранён; в отдельном общем Workspace обычные Architecture A и B видны на одном экране, Context Templates создают независимые копии State, а минимальный Context хранит заметки без History.
 - **CURRENT после G-CODE-03:** явные bindings и проверка применимости одного read-only Comparison двух совместимых Architecture Context, готовая A+B и последовательная ручная сборка с двумя открытыми Architecture и отдельным result-window. **Кандидат:** универсальные Scope и permissions, полный Workspace registry, произвольные view-local настройки и межпрофильные интеграции. В текущем коде таб-ID всё ещё хранится как контекстно-адресованная строка layout-v3.
 - **Выбрано и реализовано по умолчанию:** новый Context получает **копию** State, явно общие ссылки не создаются автоматически. **Открыто:** контракт действительно разделяемых ресурсов и разрешений, shared selections vs view-local настройки, группировка экранов, семантическая совместимость инструментов.
-- **Не реализовано в G-CODE-03:** универсальный Scope Engine, эффекты записи/общие изменяемые ресурсы, межпрофильный runtime, принудительная миграция content-v6/старых layout-v3, Shell/integration Scope folders. Реализованы только профильный Comparison Scope и оба пути сборки. Старая версия данных сохраняется рядом с новым отдельным хранилищем общего Workspace.
+- **CURRENT G-CODE-04:** подключён второй **Markdown Fixture Profile** через тот же интерфейс Shell, с отдельными Context, layout и редактируемым документом без History. Публичный read-only `ResourceProvider` разрешает `ResourceRef` обоих профилей и проверяет заявленные семантические capabilities. Тестовый просмотр снимков двух профилей возможен **через контракт**, но UI сейчас только переключает активные профили; Architecture Comparison не принимает Markdown.
+- **Не реализовано после G-CODE-04:** общий многопрофильный Workspace с окнами разных профилей одновременно, динамический каталог произвольных профилей, универсальный Scope Engine, эффекты записи/общие изменяемые ресурсы, принудительная миграция content-v6/layout-v3 и папки Shell/integrations Scope. Текущая поставка доказывает узкую универсальность без принятия всей будущей модели.
 
 История Architecture Simulator и 18 видов остаются предметным материалом: [профиль](../profiles/architecture-simulator/README.md). Описание текущего Shell: [действующая реализация](../shell/README.md).

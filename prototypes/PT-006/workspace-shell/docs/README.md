@@ -1,17 +1,18 @@
 # Документация Workspace Shell · PT-006
 
-**Вход в техническую документацию.** PT-006 содержит универсальный Shell и один подключённый профиль Architecture Simulator. Это прототип, а не уже готовая многопрофильная платформа.
+**Вход в техническую документацию.** PT-006 содержит универсальный Shell и **два переключаемых профиля**: Architecture Simulator и Markdown Fixture. Это подтверждённая узкая переиспользуемость Shell, но ещё не единая рабочая область с окнами разных профилей.
 
 ## Что читать
 
 | Область | Документ | Статус |
 |---|---|---|
 | **Shell** — окна, вкладки, экраны, навигация, компоновка | [Shell: текущие механизмы](shell/README.md) | **CURRENT**; пустой экран и копия текущего доступны в Shell |
-| **Workspace** — общий многоконтекстный режим, Context, Scope Comparison и композиции | [Workspace: как работает сейчас](workspace/README.md) | **CURRENT / G-CODE-03** |
-| **Целевая архитектура** — универсальные Scope/permissions и межпрофильные контракты | [Кандидатная модель Workspace](workspace/CANDIDATE_MODEL.md) | **CANDIDATE / G-CODE-04 и будущие расширения**; первый Scope уже реализован |
-| **Следующий этап кода** — планируемые изменения и проверки | [Предварительный пополняемый план](workspace/NEXT_CODE_PLAN_CANDIDATE.md) | **CANDIDATE / OPEN**, код не меняется этим документом |
+| **Workspace** — Context, Scope Comparison, Markdown Fixture и сохранение | [Workspace: как работает сейчас](workspace/README.md) | **CURRENT / G-CODE-04** |
+| **Целевая архитектура** — многопрофильные окна одновременно, универсальные Scope/permissions | [Кандидатная модель Workspace](workspace/CANDIDATE_MODEL.md) | **CANDIDATE / за пределами G-CODE-04** |
+| **Выполненный план G-CODE-01–04** — этапы, проверки, ограничения | [История плана](workspace/NEXT_CODE_PLAN_CANDIDATE.md) | **IMPLEMENTED / исторический кандидатный план** |
 | **Профили** — поставщики содержимого, состояния и представлений | [Профили и контракт подключения](profiles/README.md) | **CURRENT** с явными будущими направлениями |
-| **Architecture Simulator** — одна предметная реализация | [Документация профиля](profiles/architecture-simulator/README.md) | **CURRENT** |
+| **Architecture Simulator** — предметная A/B реализация | [Документация профиля](profiles/architecture-simulator/README.md) | **CURRENT** |
+| **Markdown Fixture** — второй проверочный профиль без History | [Код и описание профиля](../src/profiles/markdown-fixture/README.md) | **CURRENT / G-CODE-04** |
 | **Семантика данных симуляции** | [Система контента](architecture-simulator/CONTENT_SYSTEM.md) | **CURRENT** для PT-006; не принятие всей SC-001/V3A |
 | **Все 18 видов симулятора** | [Каталог видов](architecture-simulator/CONTENT_VIEWS.md) | **CURRENT** для PT-006 |
 
@@ -21,17 +22,18 @@
 
 - **Shell**: универсальные действия с экранами, окнами, вкладками, их размещением и переходами. Не знает предметных фактов симуляции.
 - **Workspace**: `Workspace v3` в TypeScript по-прежнему хранит **только раскладку**, но отдельные `ContextInstance` и контекстные адреса уже работают в общем Workspace на одном профиле. Это не готовый реестр всех профилей и Scope-инструментов.
-- **Profile**: регистрирует содержимое и его представления, предоставляет предметные данные, State/Schema/History и операции. Сейчас подключён только Architecture Simulator.
+- **Profile**: регистрирует содержимое и его представления, предоставляет предметные данные, State/Schema/History и операции. Подключены Architecture Simulator и Markdown Fixture, выбираемые по одному.
 - **Scope Mechanisms**: профильный `architecture-comparison-v1` уже реализует read-only Scope двух явных Context, готовую и ручную сборку. Legacy `comparison` в старом режиме продолжает читать `allData.A/B` для совместимости. Общего межпрофильного Scope runtime нет.
 
 ## Карта каталогов
 
 ```text
 src/
-├── App.tsx                        # монтирует один профиль в один Shell
+├── App.tsx                        # переключает два профиля в общем Shell
 ├── shell/                        # универсальный UI, layout и contexts.ts
 └── profiles/
-    └── architecture-simulator/   # предметный State, History, рендеринг, A/B
+    ├── architecture-simulator/   # предметный State, History, рендеринг, A/B
+    └── markdown-fixture/         # независимые документы без History
 docs/
 ├── shell/                        # факты о Shell
 ├── workspace/                    # текущая модель + кандидатная модель и будущий кодовый план

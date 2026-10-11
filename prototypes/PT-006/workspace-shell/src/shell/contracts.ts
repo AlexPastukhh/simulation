@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import type { ContentDescriptor, Workspace, ScreenTemplate, ScreenTemplateBundle } from './workspace.ts'
+import type { ResourceRef } from './contexts.ts'
+import type { ResourceSnapshot } from './resourceProviders.ts'
 
 export type ContentAddress = { profileId: string; instanceId: string; contextId?: string }
 export type WorkspaceEvent = { type: 'open-content'; target: ContentAddress }
@@ -12,6 +14,8 @@ export type InspectorActions = {
 }
 export type WorkspaceProfile = {
   id: string
+  /** Optional read-only boundary for inter-profile resource inspection. */
+  readResource?: (ref:ResourceRef) => ResourceSnapshot | null
   title: string
   subtitle: string
   descriptors: ContentDescriptor[]

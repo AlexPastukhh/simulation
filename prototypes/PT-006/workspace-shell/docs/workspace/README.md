@@ -1,6 +1,6 @@
 # Workspace — текущая реализация PT-006
 
-**CURRENT / G-CODE-03, 2026-10-11.** В PT-006 теперь доступны **два режима одного профиля Architecture Simulator**: прежние отдельные A/B раскладки и новый **«Общий Workspace»** с несколькими Context. Это не готовая многопрофильная система; реализован **один ограниченный read-only Scope Mechanism** для Architecture Comparison, не универсальный Scope Engine. [Shell](../shell/README.md) · [план остальных этапов](NEXT_CODE_PLAN_CANDIDATE.md).
+**CURRENT / G-CODE-04, 2026-10-11.** В PT-006 доступны **два режима Architecture Simulator** и отдельный **Markdown Fixture** — все используют тот же Shell: прежние отдельные A/B раскладки и новый **«Общий Workspace»** с несколькими Context. Это не совместное многопрофильное Workspace; реализован **один профильный read-only Scope Mechanism** для Architecture Comparison, не универсальный Scope Engine. [Shell](../shell/README.md) · [план остальных этапов](NEXT_CODE_PLAN_CANDIDATE.md).
 
 ## Как пользоваться
 
@@ -12,6 +12,7 @@
 6. **Готовая композиция:** нажмите **«⇄ Композиция» → «Готовая A+B» → «Открыть A+B + Comparison»**. Создастся новый Screen с Architecture A, Architecture B и отдельным окном Scope Comparison. Источники привязаны явно.
 7. **Ручная сборка:** создайте пустой экран, откройте по одному обычные Architecture для двух Context, затем **«⇄ Композиция» → «Ручная сборка»**. Выберите первую и вторую стороны, нажмите **«Связать открытые окна»**. Добавится **только окно Scope Comparison**. Неизвестный/одинаковый/несовместимый Context либо отсутствие обоих Architecture на экране — отказ **без частичного изменения**.
 8. В Scope Comparison выбор категории **events / requirements / work** сохраняется в настройках Scope, **не в State исходных Context**. Композицию можно восстановить после перезагрузки.
+9. Для проверки независимого профиля нажмите **«▤ Markdown Profile»**. Документы и Context здесь редактируются без History. «+ Экран» и «+ Контекст» работают теми же общими операциями; возврат — **«← Симулятор»**. Старые A/B и Scope остаются сохранёнными отдельно.
 
 Копии Context сохраняются в `pt006-simulator-context-copies-v1`, Scope instances — в **`pt006-simulator-comparison-scopes-v1`**, общая раскладка — в `pt006-simulator-multicontext-layout-v1`. Старые `pt006-simulator-content-[A|B]-v6` и `pt006-simulator-layout-[A|B]-v3` **сохраняют прежние назначения** и не удаляются при открытии общей рабочей области. Если пользователь менял старые A/B раскладки, общий Workspace при **первом** открытии импортирует их размещение как копии с контекстными адресами. Дальше общая раскладка редактируется и сохраняется отдельно.
 
@@ -24,13 +25,15 @@ src/shell/contexts.ts                    ResourceRef, ContextInstance/Template,
 src/shell/contracts.ts                   WorkspaceProfile, ContentAddress,
                                          createContext/resolveContentAddress
 src/shell/WorkspaceShell.tsx             generic + Контекст, + Экран, навигация/окна
-src/App.tsx                              выбор «старые A/B» / «Общий Workspace»
+src/shell/resourceProviders.ts            read-only разрешение ресурсов двух профилей
+src/App.tsx                              выбор A/B / общего Workspace / Markdown
 src/profiles/architecture-simulator/
   SimulatorProfile.tsx                   A/B State, независимые копии, сохранение,
                                          профильные представления и инспектор
   workspace.ts                           18 видов и 4 экранных рецепта
   scope-mechanisms/comparison.ts          typed Scope bindings/валидация/readout
   scope-mechanisms/ComparisonScopeView.tsx read-only результат и Scope-local выбор
+src/profiles/markdown-fixture/             независимый Markdown Profile без History
 ```
 
 Тип `Workspace` **по-прежнему версия 3**:
@@ -54,10 +57,16 @@ type Panel = { id: string; rect: Rect; tabs: string[]; active: string | null }
 
 **Область применения Scope:** `architecture-comparison-v1` имеет явные `participants.left/right: ResourceRef`, `allowedEffects: ['read']`, отдельный `presentation.contentId` и Scope-local `focus`. Валидация требует два разных доступных Architecture Context одного предметного сценария с совпадающими якорями. Результат рассчитывается при отображении из текущих источников; фактические данные, Plan и History **не изменяются**. Строковые вкладки Scope сохраняются как `scope/<scopeId>`.
 
-**Совместимость:** историческое представление `comparison` в старом режиме **по-прежнему** использует исходные `allData.A/B` ради сохранения семантики `content-v6`. В общем Workspace встроенное legacy-представление `comparison` показывает инструкцию, как создать новый Scope Comparison; оно **не подменяется молча** старой парой A/B. Готовая/ручная композиции используют один и тот же механизм, хотя разные операции размещения. **Не реализованы:** универсальные права на запись/side effects, другие типы Scope, независимые межпрофильные механизмы и произвольные shared references. Межпрофильный этап — [G-CODE-04](NEXT_CODE_PLAN_CANDIDATE.md).
+**Совместимость:** историческое представление `comparison` в старом режиме **по-прежнему** использует исходные `allData.A/B` ради сохранения семантики `content-v6`. В общем Workspace встроенное legacy-представление `comparison` показывает инструкцию, как создать новый Scope Comparison; оно **не подменяется молча** старой парой A/B. Готовая/ручная композиции используют один и тот же механизм, хотя разные операции размещения. **Не реализованы:** универсальные права на запись/side effects, другие типы Scope, независимые межпрофильные механизмы и произвольные shared references. В G-CODE-04 проверено подключение второго профиля; **одновременный inter-profile Workspace** остаётся будущим расширением.
+
+## Межпрофильный контракт: что доказано
+
+В `src/shell/resourceProviders.ts` общий `ResourceRef` разрешается по `profileId/contextId/resourceId` через явно предоставленный read-only `ResourceProvider`. Профиль Architecture заявляет `architecture.read`, Markdown — `document.read`. Универсальная функция `inspectResources` может безопасно прочесть **два разных профиля** и вернуть два снимка, не меняя их State. Запрашиваемые семантические возможности проверяются отдельно; предметный `architecture-comparison-v1` **не принимает Markdown**. Это проверено unit-тестами. UI в текущей версии **переключает активный профиль**, а не открывает окна Architecture и Markdown вместе на одном Screen.
+
+Markdown использует `pt006-markdown-contexts-v1` и `pt006-markdown-layout-v1`, не затрагивая `content-v6`, `layout-v3` и Scope экземпляры Architecture. Префиксы ключей разделены. [Профили и их контракты](../profiles/README.md).
 
 ## Доказательства и совместимость
 
-Для G-CODE-03 проверяются unit-тесты, сборка и линтер, отдельные браузерные сценарии старого Shell, Context и Scope Comparison. В контекстном browser smoke проверяются два обычных Architecture на одном экране, переход из B в B, отдельное редактирование копии и сохранение минимальных заметок без History, reload и возвращение к прежним A/B. Сценарий `scope-ui-smoke.cjs` проверяет ready/manual сборку, негативную применимость, reload Scope и отсутствие записей в A/B. Датированные результаты тестов — в [актуальном статусе проекта](../../README.md).
+Для G-CODE-04 проверяются unit-тесты (включая legacy fixtures), сборка и линтер, браузерные сценарии старого Shell, Context, Scope Comparison и второго Markdown Profile. В контекстном browser smoke проверяются два обычных Architecture на одном экране, переход из B в B, отдельное редактирование копии и сохранение минимальных заметок без History, reload и возвращение к прежним A/B. Сценарий `scope-ui-smoke.cjs` проверяет ready/manual сборку, негативную применимость, reload Scope и отсутствие записей в A/B. `profile-universality-ui-smoke.cjs` проверяет отдельные Markdown Context, generic Shell, изменение State, сохранение после reload и обратное переключение на симуляцию без потери A/B. Датированные результаты тестов — в [актуальном статусе проекта](../../README.md).
 
 Миграции legacy `v5/v4/v3`, правила сохранения фактической истории и исходные fixture описаны в [датированном журнале PT-006](../../../PT006_REMEDIATION_2026-10-10.md). Не путать **новую независимую общую раскладку** с необратимой миграцией старых layout.

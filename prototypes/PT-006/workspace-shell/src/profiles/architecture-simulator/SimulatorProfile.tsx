@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { CONTENT, INITIAL_WORKSPACE, SCREEN_TEMPLATES, getDescriptor, migrateLegacyWorkspace } from './workspace.ts'
 import { scopedContentId, parseScopedContentId, scopeDescriptors, bindContextScreens, bindLegacyLayout, combineContextLayouts, instantiateContext } from '../../shell/contexts.ts'
-import type { ContextTemplate } from '../../shell/contexts.ts'
+import type { ContextTemplate, ResourceRef } from '../../shell/contexts.ts'
 import { createWorkspaceModel } from '../../shell/workspace.ts'
 import type { Workspace } from '../../shell/workspace.ts'
 import type { ContentKind } from './workspace.ts'
@@ -139,6 +139,13 @@ export function useSimulatorProfile(): WorkspaceProfile & { shared: WorkspacePro
     const copy=contextCopies[id]
     return copy&&validateDemo(copy.state)?copy.state:null
   }
+  const readResource=(ref:ResourceRef)=>{
+    if(ref.profileId!=='architecture-simulator'||ref.resourceId!=='architecture')return null
+    const data=contextStore(ref.contextId)
+    if(!data||!atCursor(data).available)return null
+    return {ref:{...ref},capability:'architecture.read' as const,title:'Architecture '+ref.contextId,
+      summary:'Сценарий '+data.scenario.caseId+'; доступные фактические якоря: '+data.scenario.anchors.length}
+  }
   const mutateContext=(id:string):Mutate => fn=>{
     if(id==='A'||id==='B'){
       setBranchData(prev=>{const next=structuredClone(prev[id]);fn(next);return {...prev,[id]:next}})
@@ -254,6 +261,7 @@ export function useSimulatorProfile(): WorkspaceProfile & { shared: WorkspacePro
   }
   const sharedProfile:WorkspaceProfile={
     id:'architecture-simulator',
+    readResource,
     title:'Architecture Simulator',
     subtitle:'Workspace · независимые Context',
     descriptors:[...contextIds.flatMap(id=>scopeDescriptors(id,contextCopies[id]?.templateId==='minimal-planning'?[NOTES_DESCRIPTOR]:CONTENT)),...Object.values(scopes).map(comparisonDescriptor)],

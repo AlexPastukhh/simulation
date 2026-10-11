@@ -1,30 +1,25 @@
-# Профили — содержимое и создание Context
+# Профили — подключение содержимого к Shell
 
-**CURRENT / G-CODE-03.** В прототипе подключён **один** [Architecture Simulator Profile](architecture-simulator/README.md). Профиль предоставляет содержание, типы видов, State, предметные операции и Context Templates; Shell предоставляет отображение, навигацию и размещение. Не путать один профиль с одним Context: теперь **несколько Context одного профиля** могут быть видны на одном Workspace Screen.
+**CURRENT / G-CODE-04 (2026-10-11).** PT-006 содержит **два профиля**, использующих один и тот же `WorkspaceShell`: [Architecture Simulator](architecture-simulator/README.md) и минимальный [Markdown Fixture](../../src/profiles/markdown-fixture/README.md). В `App.tsx` пользователь выбирает **один активный профиль**. Несколько Context одного профиля могут находиться на одном Screen. Это проверка универсальности Shell, **не** одновременное смешанное Workspace двух профилей.
 
-## Текущий контракт
+## Общий контракт
 
-[src/shell/contracts.ts](../../src/shell/contracts.ts) определяет `WorkspaceProfile`: `id`, `descriptors`, `initialWorkspace`, `contextId/contexts`, ключи layout, миграцию, `renderContent`, `renderPanelTools`, инспектор и команды.
+[src/shell/contracts.ts](../../src/shell/contracts.ts) определяет `WorkspaceProfile`: `id`, `descriptors`, `initialWorkspace`, `contextId/contexts`, ключи раскладки, миграцию, `renderContent`, инструменты и инспектор, `resetScope`.
 
-Для общего Workspace теперь доступны **опциональные** механизмы:
-- `contextTemplateOptions`: список возможных Context Templates.
-- `createContext(templateId)`: подготовка независимого профильного State, собственных дескрипторов и предложенных экранов; профиль предоставляет `commit()` для сохранения **после** проверки полного экранного набора Shell.
-- `resolveContentAddress({profileId,contextId?,instanceId})`: разрешение контекстного адреса вида в отдельную внутреннюю вкладку, без неявной подстановки другого Context.
-- `compositionContextIds` / `prepareComparison({leftId,rightId})`: профильное определение готового/ручного Comparison. Shell валидирует размещение и вызывает `commit` **только после успеха**. Сам профиль проверяет источники, применимость и read-only эффекты.
+Опциональные механизмы:
+- `contextTemplateOptions` + `createContext(templateId)`: профиль подготавливает State/дескрипторы/экраны. Shell сначала проверяет раскладку, затем вызывает `commit()`; ошибка не создаёт частичного Context.
+- `resolveContentAddress`: проверяет `profileId/contextId/instanceId` и не подставляет неизвестный источник.
+- `compositionContextIds` + `prepareComparison`: профиль Architecture Simulator определяет **свой read-only Scope**, Shell только размещает его окна.
+- `readResource(ResourceRef)`: необязательное **read-only** описание ресурса для межпрофильной проверки. Универсальный [resourceProviders.ts](../../src/shell/resourceProviders.ts) проверяет адрес, совпадение владельца и заявленную семантическую способность, но **не знает** `DemoStore` или `MarkdownContext`. Совпадение формы JSON не даёт права применить предметный механизм.
 
-Контракт также сохраняет `screenTemplates` / `screenBundles` для экранных рецептов. Их не следует путать с Context Template: **«+ Экран» остаётся универсальным**, а создание профильного комплекта экранов идёт через **«+ Контекст»**.
+**Architecture Simulator** предоставляет подготовленные A/B `DemoStore`, Context-копии по умолчанию, минимальные заметки, 18 видов и профильный `architecture-comparison-v1`. Comparison применяется только к двум совместимым Architecture Context, даже когда приложение содержит Markdown Profile.
 
-[src/App.tsx](../../src/App.tsx) переключает старые отдельные A/B раскладки и общий Workspace, используя один `useSimulatorProfile()`, без подключения второго независимого профиля.
+**Markdown Fixture** предоставляет редактируемый текстовый Markdown-документ, отдельные Context/экраны и сохранение, **не требуя** History, Actual Events или схем симулятора. В режиме Markdown кнопки A/B и профильный Comparison не выводятся.
 
-## Что предоставляет Architecture Simulator
+## Граница доказанной универсальности
 
-- **A и B:** два независимых исторических `DemoStore`, с существующими `content-v6` и `layout-v3` ключами.
-- **Architecture Evolution:** новый Context получает копию State A по умолчанию, provenance и **четыре тематических экрана**. Каждая копия редактируется и сохраняется отдельно.
-- **Минимальный контекст:** один экран с заметками и требованиями, **без History**. Это рабочий пример, что Context не обязан быть завершённой симуляцией.
-- **Существующие 18 видов:** JSON Schema, данные и предметные операции продолжают принадлежать профилю. В общем Workspace у каждого вида есть явная принадлежность Context.
+Проверены положительный случай (публичный `WorkspaceProfile` + Shell для второго профиля, чтение ресурсных снимков обоих профилей через `ResourceProvider`) и отрицательный (Architecture Comparison и механизм `architecture.read` неприменимы к `document.read`). Поставщики не импортируют внутренние хранилища друг друга.
 
-## Реализованный Scope и оставшийся кандидат
+**Пока не реализованы:** одновременные окна разных профилей на одном Workspace Screen, универсальные inter-profile Scope с effects/write, динамическая загрузка неизвестных профилей, общий registry permissions и всеобщая семантика view-local selections. Их не следует автоматически объявлять выполненными из-за успешного G-CODE-04.
 
-**Один типизированный Scope Mechanism для Comparison двух совместимых Architecture Context реализован** в [коде профиля](../../src/profiles/architecture-simulator/scope-mechanisms/comparison.ts): он читает два явных `ResourceRef`, имеет `allowedEffects:['read']` и отдельную область представления, проверяет доступность и совпадение сценарных якорей. Сфера механизма ограничена **одним профилем**, несмотря на участие нескольких Context. **Межпрофильный runtime и другие Scope Mechanisms ещё не реализованы**. Текущий `comparison` по-прежнему специально программируется для A/B. [Кандидатная архитектура](../workspace/CANDIDATE_MODEL.md) объясняет будущее разделение: общие механизмы в Shell, механизмы одного профиля (включая межконтекстные) — внутри него, требующие нескольких профилей — в integrations, узкие — у владельца с исполняемой проверкой применимости. Теперь существует только предметная папка `src/profiles/architecture-simulator/scope-mechanisms/`, поскольку в ней действительно размещён механизм сравнения. Универсальной папки `src/shell/scope-mechanisms/` и интеграционных Scope-модулей пока нет.
-
-[Индекс](../README.md) · [Shell](../shell/README.md) · [Workspace](../workspace/README.md).
+[Shell](../shell/README.md) · [Workspace](../workspace/README.md) · [История плана](../workspace/NEXT_CODE_PLAN_CANDIDATE.md).

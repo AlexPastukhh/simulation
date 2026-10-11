@@ -1,6 +1,6 @@
 # PT-006 · Workspace Shell и профиль Architecture Simulator
 
-**Workspace Shell** — универсальная оболочка экранов, окон, вкладок, компоновки и навигации. **Architecture Simulator** — первый подключённый **профиль**, предоставляющий 18 предметных видов, демонстрационные State/Schema/History и альтернативные архитектуры A/B. Сейчас это прототип с **одним активным профилем**, не готовая многопрофильная платформа. **CURRENT** далее означает проверенное поведение этой версии кода. **Context Instances, Context Templates и один профильный read-only Scope Comparison уже доступны; другие Scope Mechanisms и межпрофильная композиция остаются кандидатами.**
+**Workspace Shell** — универсальная оболочка экранов, окон, вкладок, компоновки и навигации. **Architecture Simulator** — первый подключённый **профиль**, предоставляющий 18 предметных видов, демонстрационные State/Schema/History и альтернативные архитектуры A/B. В приложении **два переключаемых профиля** — Architecture Simulator и Markdown Fixture; одновременно активен один. Это ещё не общий Workspace с окнами обоих профилей. **CURRENT** далее означает проверенное поведение этой версии кода. **Context Instances, Context Templates и один профильный read-only Scope Comparison уже доступны; другие Scope Mechanisms и межпрофильная композиция остаются кандидатами.**
 
 **Начните с [карты документации](docs/README.md).** Она разделяет действующий Shell, текущий Workspace и реализованный read-only Comparison Scope, остающиеся кандидаты общей Scope/Integration-архитектуры и профиль симулятора.
 
@@ -21,8 +21,8 @@ npm run lint
 | Область | Основной документ | Статус |
 |---|---|---|
 | Shell: экран, окно, вкладка, `open-content`, пустой экран, копия текущего, drag/fit | [Shell](docs/shell/README.md) | **CURRENT** |
-| Workspace: Context A/B, независимые State, готовое и ручное Scope Comparison | [Workspace](docs/workspace/README.md) | **CURRENT / G-CODE-03** |
-| Оставшаяся архитектура: универсальный Scope Engine, разрешения и интеграция профилей | [Кандидатная модель](docs/workspace/CANDIDATE_MODEL.md) | **CANDIDATE / G-CODE-04 и развитие** |
+| Workspace: Context A/B, Scope Comparison, второй Markdown Profile | [Workspace](docs/workspace/README.md) | **CURRENT / G-CODE-04** |
+| Оставшаяся архитектура: одновременные межпрофильные окна, общий Scope Engine, права записи | [Кандидатная модель](docs/workspace/CANDIDATE_MODEL.md) | **CANDIDATE / после G-CODE-04** |
 | Подключаемые поставщики содержимого | [Profiles](docs/profiles/README.md) | **CURRENT** |
 | Предметная A/B симуляция | [Architecture Simulator](docs/profiles/architecture-simulator/README.md) | **CURRENT** |
 | Факты/планы/история и связи | [Система контента](docs/architecture-simulator/CONTENT_SYSTEM.md) | **CURRENT для PT-006** |
@@ -32,12 +32,13 @@ npm run lint
 
 ```text
 src/
-├── App.tsx                        # один профиль → один WorkspaceShell
+├── App.tsx                        # переключаемые Architecture и Markdown в одном Shell
 ├── main.tsx
 ├── shell/
 │   ├── contracts.ts               # профиль и события
 │   ├── workspace.ts               # layout/screens/panels/tabs
 │   ├── contexts.ts                # Context/ResourceRef/Template и адреса
+│   ├── resourceProviders.ts       # read-only контракт ресурсов разных профилей
 │   ├── WorkspaceShell.tsx
 │   └── windowDrag.ts
 └── profiles/
@@ -48,6 +49,7 @@ src/
         ├── workspace.ts           # виды и стартовые экраны
         ├── scope-mechanisms/       # Comparison с явными Scope bindings
         └── ...                    # рендеринг, данные, стили
+    └── markdown-fixture/          # проверочный профиль с документом без History
 docs/
 ├── README.md                      # общий индекс
 ├── shell/                         # текущий Shell
@@ -59,6 +61,12 @@ tests/                              # unit и UI-smoke
 
 Тип `Workspace` по-прежнему описывает **раскладку**, а отдельный слой `contexts.ts` и профиль управляют Context/ResourceRef/Template. В общем Workspace можно открыть разные Context на одном экране. Полноценного универсального Scope Engine пока нет. Профильная папка `src/profiles/architecture-simulator/scope-mechanisms/` уже существует, а `src/integrations/` и универсальная Shell Scope-папка — ещё нет.
 
+## Второй профиль и границы универсальности
+
+Кнопка **«▤ Markdown Profile»** открывает проверочный профиль с независимыми Markdown Context и документами **без** History. Создание Context, пустой/скопированный экран, редактирование и сохранение используют те же механизмы Shell; вернуться в симуляцию можно через **«← Симулятор»**. Профили имеют отдельные ключи данных и layout. Read-only контракт [ResourceProvider](src/shell/resourceProviders.ts) позволяет тестам разрешить ссылки на ресурсы обоих профилей с проверкой семантических возможностей; Architecture Comparison **отвергает Markdown**.
+
+**Не реализовано:** одновременная компоновка окон Architecture и Markdown на одном Workspace Screen и общий межпрофильный Scope Engine. Этот результат **подтверждает проверяемую универсальность Shell**, но не завершение всей кандидатной платформы.
+
 ## Экраны симуляции: реализовано сейчас
 
 Новая раскладка при первом открытии состоит из четырёх тематических экранов: «История и факты», «Архитектура и реализация», «Планирование», «Результаты и сравнение». Все **18 видов** располагаются в отдельных стартовых окнах. Ранее сохранённые пользовательские раскладки A/B сохраняются без автоматической замены.
@@ -69,7 +77,8 @@ tests/                              # unit и UI-smoke
 
 ## Статус и история решений
 
-- **CURRENT / G-CODE-03 (2026-10-11):** **97/97 unit**, build, lint и три Edge smoke (старые раскладки, Context Instances, Scope Comparison). Проверены read-only bindings, готовая A+B и ручная сборка, отказ несовместимой/одинаковой паре, сохранение Scope после reload и неизменность фактических State A/B.
+- **CURRENT / G-CODE-04 (2026-10-11):** второй Markdown Fixture Profile, отдельные Context и сохранение без History, read-only контракты двух профилей. **101/101 unit**, build/lint, все 4 Edge UI smoke (legacy, Context, Scope, Markdown), подтверждена неизменность A/B. Межпрофильные окна одновременно **не реализованы**.
+- **HISTORICAL / G-CODE-03 (2026-10-11):** **97/97 unit**, build, lint и три Edge smoke (старые раскладки, Context Instances, Scope Comparison). Проверены read-only bindings, готовая A+B и ручная сборка, отказ несовместимой/одинаковой паре, сохранение Scope после reload и неизменность фактических State A/B.
 - **HISTORICAL / G-CODE-02 (2026-10-11):** проверены **92/92 unit-теста**, build и lint, Edge UI smoke старого Shell и **отдельный context-ui-smoke**: A/B на одном Screen, адресные переходы, редактирование копии независимо от A, минимальные заметки без History, восстановление после reload. Это **не** проверка будущего Scope Engine.
 - **HISTORICAL / G-CODE-01, 2026-10-11:** экранная итерация прошла 86/86 unit-тестов, build/lint и Edge smoke. Реализовано «+ Экран» с пустым экраном/копией и 4 стартовых экрана.
 - **HISTORICAL / WSC 2026-10-10:** [WSC-PR-01–04](../PT006_WORKSPACE_INTERACTIONS_2026-10-10.md) — ограниченный принятый объём Shell/профиля; на его датированном этапе прошло 79/79 тестов и ограниченный Edge smoke. [Исправления PT-006](../PT006_REMEDIATION_2026-10-10.md) хранят собственные датированные результаты.

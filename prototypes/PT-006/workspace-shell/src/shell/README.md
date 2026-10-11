@@ -13,6 +13,6 @@
 
 В прежнем режиме `open-content` использует `{profileId,instanceId}`. Для общего Workspace адрес может включать `contextId`; только профиль разрешает его во внутренний `context/<contextId>/<resourceId>` ключ вкладки. Нельзя подменять неизвестную цель другим Context. Два экземпляра одного вида в разных Context считаются разными адресованными ресурсами.
 
-В `App.tsx` по-прежнему **один профиль**; подключается либо legacy-представление, либо общий Workspace этого же профиля. Реализована ready/manual композиция **одного профильного read-only Comparison Scope**: Shell размещает окна и подтверждает профильный Scope только после проверки layout. Межпрофильный runtime, **универсальные** Scope Mechanisms и всеобщие view-local persisted selections **не реализованы**.
+В `App.tsx` активен один из **двух доступных профилей**; подключается либо legacy-представление, либо общий Workspace этого же профиля. Реализована ready/manual композиция **одного профильного read-only Comparison Scope**: Shell размещает окна и подтверждает профильный Scope только после проверки layout. Межпрофильный runtime, **универсальные** Scope Mechanisms и всеобщие view-local persisted selections **не реализованы**.
 
 [Подробное описание Shell](../../docs/shell/README.md) · [Работа с Workspace](../../docs/workspace/README.md) · [Профили](../../docs/profiles/README.md).
