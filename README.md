@@ -1,45 +1,36 @@
-# Architecture Evolution Simulator — Start Here / Handoff
+# Simulation — сценарии документации и прототипы
 
-## Текущий результат и входные документы
+## Текущий PT-006
 
-Интерактивный исследовательский симулятор показывает, как меняются приложение, архитектура, реализация и работа при изменении потребностей. Это подготовленное сравнение допустимых архитектур с объяснениями и evidence.
+PT-006 работает с одной новой Feature/DDD-архитектурой. Architecture Planning Content Instance содержит CURRENT и Plan с независимыми Evolution Steps. Site Requirements и Markdown — отдельные Content Instances. History хранит явно зафиксированные фактические снимки; Screen/Window управляют представлениями и размещением. Полный Workspace и его создаваемый набор состоят из четырёх экранов с 17 основными окнами (5/4/4/3); Architecture Planning заменяет отдельное Architecture и показывает CURRENT или Step. [Каталог видов и владельцев данных](prototypes/PT-006/workspace-shell/docs/architecture-simulator/CONTENT_VIEWS.md).
 
-Читайте:
-1. [SC-001@v5-candidate](SC-001_desired_architecture_simulator_scenario_v5_candidate.md): цель и желаемый пользовательский путь.
-2. [V3A r10 delta](architecture_simulator_proposal_composition_v3a_candidate_r10_pt006_remediation.md): текущая поправка для PT-006; наследует [r9 delta](architecture_simulator_proposal_composition_v3a_candidate_r9_delta.md) и исторический [r7](architecture_simulator_proposal_composition_v3a_candidate_r7.md).
-3. [PT-006: состав и журнал исправлений](prototypes/PT-006/PT006_REMEDIATION_2026-10-10.md): принятый объём, порядок, критерии и фактический статус.
-4. [PT-006 Workspace Shell — вход](prototypes/PT-006/workspace-shell/README.md), [карта технической документации Shell / Workspace / Profiles](prototypes/PT-006/workspace-shell/docs/README.md) и [исторический полный review](prototypes/PT-006/workspace-shell/PT006_independent_content_review_2026-10-10.md).
-5. [Индекс прототипов](prototypes/README.md): исторические проверки и ограничения.
-6. [PT-006: Workspace Events, вкладки, режим просмотра и профили](prototypes/PT-006/PT006_WORKSPACE_INTERACTIONS_2026-10-10.md): WSC-PR-01–04 реализованы в PT-006. **В датированной WSC-итерации 2026-10-10** прошли 79 тестов, build, lint и ограниченный Edge smoke-test; пользовательская приёмка ещё не выполнена.
+Активные A/B, Context и Scope Comparison удалены. Сравнение архитектур отложено; старые браузерные данные не импортируются и не удаляются.
 
-Workspace/Shell — универсальная оболочка окон, вкладок и навигации, а Architecture Evolution Simulator — только один профиль её использования. Возможны другие симуляции, Markdown-файлы и другое содержимое. Предметная модель A/B, Plan и Actual Events не должна становиться частью Shell.
+- [PT-006: запуск и документация](prototypes/PT-006/workspace-shell/README.md)
+- [Состояние реализации и ограничения проверки](prototypes/PT-006/workspace-shell/docs/workspace/HANDOFF.md)
+- [Workspace и хранение](prototypes/PT-006/workspace-shell/docs/workspace/README.md)
 
-## Предметная модель
+Подробные технические определения принадлежат документации PT-006. Этот README — входная карта.
 
-- Actual Events задают фактический момент. Requirements, CURRENT, файлы, работа и доступный Plan показываются в контексте этого момента.
-- Requirement Model остаётся ненормализованной. Feature/BusinessRule не становятся обязательной общей онтологией.
-- Один Plan / PlanRevision содержит Evolution Steps и другую плановую работу, возможные события, условия, сроки, прогнозы и Planned Change Axes.
-- Evolution Step меняет функцию или реализацию. Он имеет полный target ArchitectureSnapshot и отдельный EvolutionImpact. Работа без такого изменения не обязана быть Step.
-- У PlanRevision есть неизменяемый фактический BASE. Выбор Step или архивного Plan не исполняет работу и не меняет CURRENT.
-- Плановое ожидание маршрута, оценка завершения, обещанный срок и фактический исход — разные утверждения с источниками.
-- Planned Change Axes относятся к ожидаемым изменениям. Actual Hot Paths относятся к выполненной работе.
-- Implementation — вымышленное фактическое дерево файлов плюс отдельные плановые эффекты.
-- A/B имеют общий старт и одинаковые независимые внешние события. Различия последствий имеют авторское объяснение. Нет обязательного победителя или скрытого общего балла.
+## Кандидатные направления
 
-## Исторические проверки и версии
+[Общий DRLD — документация, Gendocen и Workspace](DESIRED_SCENARIO_DOCUMENTATION_WORKSPACE_CANDIDATE.md), [индекс самостоятельных DRLD](desired_scenarios/README.md) и [Need/FR trace](desired_scenarios/NEED_FR_TRACE_REVIEW_CANDIDATE.md) имеют статус CANDIDATE. Сквозная интеграция Git/Gendocen/Workspace в PT-006 не реализована.
 
-SC-001@v5 и полная V3A composition — candidate. Пользователь разрешил ограниченную итерацию исправлений PT-006 по P6R-PR-01A и P6R-PR-02–06. Это отдельное решение исполнения, не принятие всех candidate схем и FR.
+[SC-001@v6-candidate](SC-001_desired_architecture_simulator_scenario_v6_candidate.md) описывает самостоятельный authored comparative scenario. Он не является текущим runtime PT-006 или принятым требованием вернуть A/B. [V3A r10](architecture_simulator_proposal_composition_v3a_candidate_r10_pt006_remediation.md) и его предыдущие версии сохраняют исторический кандидатный контекст.
 
-PT-006 обновлён до content-v6. В текущих 18 видах есть оставшийся материал review и исправленная история. На этапе исправления содержимого **2026-10-10** прошёл **71 тест**, build и lint; тогда же проверены 144 поверхности каталога, 9 исторических срезов и миграция. На следующем WSC-этапе **2026-10-10** прошли **79 тестов**. Экранная итерация **2026-10-11 (G-CODE-01)** проверена: **86 тестов**, build, lint и Edge UI smoke. Следующая группа **G-CODE-02 (полноценные контексты)** прошла **92 теста**, build/lint и два браузерных smoke: A/B на одном экране, независимые копии State, Context Template с четырьмя экранами и минимальный Context без History. В группе **G-CODE-03** создан профильный read-only Comparison Scope с явными источниками, готовой A+B и последовательной ручной сборкой; пройдены **97 тестов**, build/lint и три браузерных smoke. Сравнение не перезаписывает State A/B; межпрофильная проверка остаётся G-CODE-04. Группа **G-CODE-04** проверила второй Markdown Fixture Profile без History, read-only ресурсы двух профилей и неприменимость Architecture Comparison к Markdown: **101 unit-тест**, build/lint и 4 Edge smoke. **После независимого аудита PT-006** исправлена неразрушающая загрузка A/B, Context/Scope и layout, добавлен архив исходных повреждённых сохранений, усилен Workspace validator и устранено падение Markdown без M-1: **106 unit-тестов**, build/lint и **5 Edge smoke**, включая отрицательные сценарии. Код и документация публикуются вместе; детали — в [README PT-006](prototypes/PT-006/workspace-shell/README.md) и датированных журналах.
+## История
 
-[Полный review](prototypes/PT-006/workspace-shell/PT006_independent_content_review_2026-10-10.md) описывает версию до исправлений и сохранён как история. Пользовательская проверка удобства, missing V2 и исходная переписка остаются ограничениями. Общие термины: [GLOSSARY](GLOSSARY.md).
+Датированные результаты относятся к своим версиям:
 
-Исторические r3–r9 и SC-001 v4 сохранены. Старое отдельное Evolution Map и обязательные Evolution Options не являются текущей моделью. PT-001/002/003 сохраняют свои исторические границы; PT-003 не утверждён как удобный интерфейс и не имеет VE promotion. PT-005 не изменяется этой итерацией.
+- [Исправления содержимого PT-006, 2026-10-10](prototypes/PT-006/PT006_REMEDIATION_2026-10-10.md)
+- [Workspace interactions, 2026-10-10](prototypes/PT-006/PT006_WORKSPACE_INTERACTIONS_2026-10-10.md)
+- [Независимый content review, 2026-10-10](prototypes/PT-006/workspace-shell/PT006_independent_content_review_2026-10-10.md)
+- [Индекс прототипов](prototypes/README.md)
 
-В старом плане V2 назван committed baseline, но его отдельный файл не найден в проверенном checkout. Не изображайте его независимо восстановленным.
+Прежние content-v6, Context/A/B и результаты их проверок относятся к историческому runtime. Применимые виды исходного каталога восстановлены в новой одноархитектурной композиции: отдельное Architecture заменено Architecture Planning, Comparison исключён. Прежние проверки не являются доказательством проверок нового рабочего дерева. Старые Scenario/reviews сохраняются как история. В старом плане упомянут отдельный V2 baseline; его файл ранее не был найден, поэтому не считать его независимо восстановленным.
 
-## Работа следующего исполнителя
+## Для следующего исполнителя
 
-Читайте текущие входные документы и журнал исправлений. Не используйте старый review как статус после новых изменений. Не повышайте пример или технический Git commit до User Need, FR или semantic commit. Новую материальную поправку к плану сохраняйте отдельной версией.
+Сначала прочитайте HANDOFF PT-006 и фактический git status: рабочее дерево может содержать untracked исходники. Не используйте старый HEAD или датированный review как описание нового поведения. Не повышайте candidate, пример или технический Git commit до принятого Need/FR/Scenario.
 
-Работайте на локальном snapshot/workspace. Через выбранный пользователем Туннель получайте authoritative HOST, перед переносом проверяйте конфликты, сохраняйте затрагиваемые оригиналы и проверяйте CLI/tests. Не используйте другой Remote Desktop Commander и не автоматизируйте пользовательский Windows desktop без явного разрешения.
+Работайте в выбранном пользователем workspace. Перед переносом проверьте конфликты, сохраните затрагиваемые оригиналы и выполните необходимые проверки. Не меняйте монтирования, права или пользовательский Windows desktop без отдельного разрешения.

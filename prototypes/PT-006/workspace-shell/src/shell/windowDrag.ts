@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react'
 import { createWorkspaceModel } from './workspace.ts'
 const { changeRect, findFreeFitRect, swapPanels } = createWorkspaceModel([])
+import type {MechanicOutcome} from './mechanics/contracts.ts'
 import type { Panel, Rect, Screen, Workspace } from './workspace.ts'
 
 type Ghost = { x: number; y: number; w: number; h: number; fit: boolean }
@@ -15,6 +16,7 @@ type Args = {
   fitGap: number
   onFitted: () => void
   update: (fn: (value: Workspace) => Workspace) => void
+  observe?: (action:string,outcome:MechanicOutcome,detail?:Record<string,unknown>)=>void
 }
 
 export function edgeScrollVelocity(pointer: number, start: number, end: number, edge = 66): number {
@@ -34,7 +36,7 @@ export function draggedRectAt(pointer: Pointer, boardOrigin: Pointer, grabOffset
 }
 
 /** Mouse-wheel and edge scrolling work throughout a live, pointer-based drag. */
-export function useWindowDrag({ screen, workspace, board, stage, armedPanelId, fitGap, onFitted, update }: Args) {
+export function useWindowDrag({ screen, workspace, board, stage, armedPanelId, fitGap, onFitted, update, observe }: Args) {
   const [ghost, setGhost] = useState<Ghost | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -63,6 +65,7 @@ export function useWindowDrag({ screen, workspace, board, stage, armedPanelId, f
       offset, moved: false,
     }
     setNotice(null)
+    observe?.('drag-start','observed')
 
     const syncPreview = () => {
       const active = dragging.current
@@ -89,6 +92,7 @@ export function useWindowDrag({ screen, workspace, board, stage, armedPanelId, f
       evt.stopPropagation() // keep drag-board scrolling separate from tab-strip wheel scrolling
       const scale = evt.deltaMode === 1 ? 18 : evt.deltaMode === 2 ? scroll.clientHeight : 1
       scroll.scrollBy(evt.deltaX * scale, evt.deltaY * scale)
+      observe?.('drag-wheel','observed',{scrollTop:scroll.scrollTop,scrollLeft:scroll.scrollLeft})
       requestAnimationFrame(syncPreview)
     }
     const move = (evt: PointerEvent) => {
@@ -113,7 +117,7 @@ export function useWindowDrag({ screen, workspace, board, stage, armedPanelId, f
             active.y >= r.top - 20 && active.y <= r.bottom + 20) {
           const dx = edgeScrollVelocity(active.x, r.left, r.right)
           const dy = edgeScrollVelocity(active.y, r.top, r.bottom)
-          if (dx || dy) scroll.scrollBy(dx, dy)
+          if (dx || dy){scroll.scrollBy(dx, dy);observe?.('drag-edge-scroll','observed',{scrollTop:scroll.scrollTop,scrollLeft:scroll.scrollLeft})}
         }
         syncPreview()
       }
@@ -133,7 +137,7 @@ export function useWindowDrag({ screen, workspace, board, stage, armedPanelId, f
       setDraggedId(null)
       setPreviewRect(null)
     }
-    const cancel = () => cleanup()
+    const cancel = () => {cleanup();observe?.('drag-cancel','cancelled')}
     const release = (evt: PointerEvent) => {
       const bounds = board.current?.getBoundingClientRect()
       const active = dragging.current
@@ -163,10 +167,10 @@ export function useWindowDrag({ screen, workspace, board, stage, armedPanelId, f
             { x: evt.clientX, y: evt.clientY }, { x: bounds.left, y: bounds.top }, active.offset, panel.rect)))
         }
       }
-      cleanup()
+      cleanup();observe?.('drag-release','observed')
     }
     const keydown = (evt: KeyboardEvent) => {
-      if (evt.key === 'Escape') { evt.preventDefault(); cleanup() }
+      if (evt.key === 'Escape') { evt.preventDefault(); cancel() }
       else if (evt.key === 'PageDown') { evt.preventDefault(); scroll.scrollBy(0, scroll.clientHeight * .7) }
       else if (evt.key === 'PageUp') { evt.preventDefault(); scroll.scrollBy(0, -scroll.clientHeight * .7) }
     }

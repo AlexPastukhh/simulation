@@ -2,23 +2,21 @@ export type ContentId = string
 export type Rect = { x: number; y: number; w: number; h: number }
 export type Panel = { id: string; rect: Rect; tabs: ContentId[]; active: ContentId | null }
 export type Screen = { id: string; title: string; panels: Panel[] }
-export type Workspace = { version: 3; activeScreenId: string; screens: Screen[] }
+export type ScreenGroup = { id: string; title: string; screenIds: string[] }
+export type Workspace = { version: 3; activeScreenId: string; screens: Screen[]; screenGroups?: ScreenGroup[] }
 /** Templates describe placements, not copies of any profile's content data. */
-export type ScreenTemplate = {
-  id: string
-  title: string
-  description?: string
-  panels: { rect: Rect; tabs: ContentId[]; active: ContentId | null }[]
-}
-export type ScreenTemplateBundle = {
-  id: string
-  title: string
-  description?: string
-  templateIds: string[]
-}
 export type NewWorkspaceId = (kind: 'screen' | 'panel') => string
 export type ContentDescriptor = { id: ContentId; label: string; caption: string; icon: string; minWidth: number; minHeight: number; maxPerScreen: number | null; accent: string }
 export const FRAME_MIN = { w: 190, h: 156 }
+export function findOpenContentWindow(workspace:Workspace,contentId:ContentId):{screenId:string;panelId:string}|null {
+ const active=workspace.screens.find(s=>s.id===workspace.activeScreenId)??workspace.screens[0]
+ if(!active)return null
+ for(const screen of [active,...workspace.screens.filter(s=>s.id!==active.id)]){
+  const panel=screen.panels.find(p=>p.tabs.includes(contentId))
+  if(panel)return {screenId:screen.id,panelId:panel.id}
+ }
+ return null
+}
 export function createWorkspaceModel(CONTENT: readonly ContentDescriptor[]) {
   const getDescriptor = (id: ContentId): ContentDescriptor => {
     const value=CONTENT.find(item=>item.id===id)
@@ -69,50 +67,29 @@ function duplicateScreen(w: Workspace, sourceId: string, makeId: NewWorkspaceId)
   copy.activeScreenId=id
   return copy
 }
-/** All-or-nothing addition of profile-provided screens. Reject invalid references
- * and dimensions before touching the user's existing screens. */
-function addScreensFromTemplates(w:Workspace, templates:readonly ScreenTemplate[],makeId:NewWorkspaceId):Workspace|null {
-  if(!templates.length)return null
-  const copy=clone(w), known=new Set([...w.screens.map(s=>s.id),...w.screens.flatMap(s=>s.panels.map(p=>p.id))])
-  const next=(kind:'screen'|'panel')=>{
-    const id=makeId(kind)
-    if(!id||known.has(id))return null
-    known.add(id)
-    return id
-  }
-  let firstId:string|null=null
-  for(const template of templates){
-    if(!template||typeof template.id!=='string'||!template.id.trim()||typeof template.title!=='string'||!template.title.trim()||!Array.isArray(template.panels))return null
-    const screenId=next('screen')
-    if(!screenId)return null
-    const counts=new Map<string,number>(), panels:Panel[]=[]
-    for(const p of template.panels){
-      if(!p||!Array.isArray(p.tabs)||!p.rect||![p.rect.x,p.rect.y,p.rect.w,p.rect.h].every(Number.isFinite)||
-         p.rect.x<0||p.rect.y<0||p.rect.w<FRAME_MIN.w||p.rect.h<FRAME_MIN.h||
-         (p.active!==null&&!p.tabs.includes(p.active))||new Set(p.tabs).size!==p.tabs.length)return null
-      for(const kind of p.tabs){
-        const descriptor=CONTENT.find(d=>d.id===kind)
-        if(!descriptor||p.rect.w<descriptor.minWidth||p.rect.h<descriptor.minHeight)return null
-        const count=(counts.get(kind)??0)+1
-        if(descriptor.maxPerScreen!==null&&count>descriptor.maxPerScreen)return null
-        counts.set(kind,count)
-      }
-      const id=next('panel')
-      if(!id)return null
-      panels.push({id,rect:{...p.rect},tabs:[...p.tabs],active:p.active})
-    }
-    copy.screens.push({id:screenId,title:template.title,panels})
-    firstId??=screenId
-  }
-  copy.activeScreenId=firstId!
-  return copy
-}
 function removeScreen(w: Workspace, id: string): Workspace {
   if (w.screens.length <= 1 || !screenOf(w, id)) return w
   const copy = clone(w)
   copy.screens = copy.screens.filter(s => s.id !== id)
+  copy.screenGroups = copy.screenGroups?.map(g=>({...g,screenIds:g.screenIds.filter(sid=>sid!==id)})).filter(g=>g.screenIds.length>=2)
   if (copy.activeScreenId === id) copy.activeScreenId = copy.screens[0].id
   return copy
+}
+/** Groups only change the screen rail: they never move screens, windows or domain State. */
+function saveScreenGroup(w:Workspace,id:string,title:string,screenIds:readonly string[]):Workspace|null {
+  const label=title.trim()
+  if(!id||!label||label.length>100||screenIds.length<2||new Set(screenIds).size!==screenIds.length)return null
+  const known=new Set(w.screens.map(s=>s.id))
+  if(screenIds.some(sid=>!known.has(sid)))return null
+  const groups=w.screenGroups??[]
+  if(groups.some(g=>g.id!==id&&g.screenIds.some(sid=>screenIds.includes(sid))))return null
+  const existing=groups.some(g=>g.id===id)
+  const group={id,title:label,screenIds:[...screenIds]}
+  return {...w,screenGroups:existing?groups.map(g=>g.id===id?group:g):[...groups,group]}
+}
+function removeScreenGroup(w:Workspace,id:string):Workspace {
+  if(!w.screenGroups?.some(g=>g.id===id))return w
+  return {...w,screenGroups:w.screenGroups.filter(g=>g.id!==id)}
 }
 function activateScreen(w: Workspace, id: string): Workspace {
   if (!screenOf(w, id)) return w
@@ -296,29 +273,39 @@ function validateWorkspace(value: unknown): value is Workspace {
       }
     }
   }
+  if(w.screenGroups!==undefined){
+    if(!Array.isArray(w.screenGroups)||w.screenGroups.length>100)return false
+    const groupIds=new Set<string>(),members=new Set<string>()
+    const screens=new Set(w.screens.map(s=>s.id))
+    for(const g of w.screenGroups){
+      if(!g||typeof g.id!=='string'||!g.id.trim()||groupIds.has(g.id)||screens.has(g.id)||
+        typeof g.title!=='string'||!g.title.trim()||g.title.length>100||
+        !Array.isArray(g.screenIds)||g.screenIds.length<2)return false
+      groupIds.add(g.id)
+      for(const id of g.screenIds){
+        if(typeof id!=='string'||!screens.has(id)||members.has(id))return false
+        members.add(id)
+      }
+    }
+  }
   return w.screens.some(s => s.id === w.activeScreenId)
 }
 
-  /** Reuse the addressed instance across screens before allocating a window. */
-  function openContent(workspace: Workspace, instanceId: ContentId, newPanelId: string):
+  /** Reuse an existing descriptor view across screens before allocating a window. */
+  function openContent(workspace: Workspace, contentId: ContentId, newPanelId: string):
     { workspace: Workspace; screenId: string; panelId: string; created: boolean } | null {
-    if (!CONTENT.some(item => item.id === instanceId)) return null
-    const active = currentScreen(workspace)
-    const ordered = [active, ...workspace.screens.filter(screen => screen.id !== active.id)]
-    for (const screen of ordered) {
-      for (const panel of screen.panels) {
-        if (!panel.tabs.includes(instanceId)) continue
-        return {
-          workspace: activateContent(activateScreen(workspace, screen.id), screen.id, panel.id, instanceId),
-          screenId: screen.id, panelId: panel.id, created: false,
-        }
-      }
+    if (!CONTENT.some(item => item.id === contentId)) return null
+    const existing = findOpenContentWindow(workspace, contentId)
+    if(existing)return {
+      workspace: activateContent(activateScreen(workspace,existing.screenId),existing.screenId,existing.panelId,contentId),
+      ...existing,created:false,
     }
-    const screenId = active.id
-    const created = addContent(addPanel(workspace, screenId, newPanelId), screenId, newPanelId, instanceId)
-    if (!created.screens.some(screen => screen.panels.some(panel => panel.id === newPanelId && panel.active === instanceId))) return null
+    const screenId = currentScreen(workspace).id
+    const created = addContent(addPanel(workspace, screenId, newPanelId), screenId, newPanelId, contentId)
+    if (!created.screens.some(screen => screen.panels.some(panel => panel.id === newPanelId && panel.active === contentId))) return null
     return { workspace: created, screenId, panelId: newPanelId, created: true }
   }
 
-  return {getDescriptor, currentScreen, countContent, canAddContent, addScreen, duplicateScreen, addScreensFromTemplates, removeScreen, activateScreen, renameScreen, addPanel, removePanel, addContent, removeContent, activateContent, changeRect, swapPanels, findFreeFitRect, undersized, validateWorkspace, openContent}
+  const hasDescriptor = (id:ContentId)=>CONTENT.some(d=>d.id===id)
+  return {getDescriptor, hasDescriptor, currentScreen, countContent, canAddContent, addScreen, duplicateScreen, removeScreen, activateScreen, renameScreen, saveScreenGroup, removeScreenGroup, addPanel, removePanel, addContent, removeContent, activateContent, changeRect, swapPanels, findFreeFitRect, undersized, validateWorkspace, openContent}
 }

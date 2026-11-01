@@ -1,53 +1,32 @@
-# Shell — универсальная оболочка экранов и контекстов
+# Workspace Shell
 
-**CURRENT / G-CODE-04 (2026-10-11).** Shell управляет экранами, окнами, вкладками, их геометрией и маршрутизацией. **Не** владеет Architecture, Actual Events, Plan, History и предметным State. [Главный индекс](../README.md) · [Работа с Workspace](../workspace/README.md).
+Shell управляет размещением, не предметными данными. Карта модулей:
 
-## Реализованные механизмы
+- workspace.ts — геометрия, Screen/Panel, группы и layout.
+- WorkspaceShell.tsx — UI, layout/settings persistence и сообщения об отказе.
+- workspaceCommands.ts + workspaceDispatch.ts — общий pipeline операций UI/Bridge и revision checks.
+- windowDrag.ts — drag/fit.
+- panelPresets.ts — сохраняемые композиции окна, без копии Content.
+- safeStorage.ts — guarded UI write и архив повреждённого raw.
+- templateInstances.ts — используемые constructor, metadata и summaries/catalog.
+- contracts.ts — интерфейс одного активного Workspace Profile.
 
-В [src/shell/workspace.ts](../../src/shell/workspace.ts) находится модель `Workspace v3` как **раскладка**, операции экранов/окон/вкладок, ограничения `ContentDescriptor` и поиск свободной геометрии. [WorkspaceShell.tsx](../../src/shell/WorkspaceShell.tsx) реализует UI, drag/fit — [windowDrag.ts](../../src/shell/windowDrag.ts), общие контракты — [contracts.ts](../../src/shell/contracts.ts).
+Неиспользуемые profile open-content events, getter экземпляров и generic compatibility checker удалены. Layout openContent command остаётся действующей командой Bridge; она адресует view descriptor, а не предметный Instance ID.
 
-- **Screen** — название и список Panel; **Panel** — геометрия `rect`, вкладки `tabs` и выбранный `active`. Вкладки **экранов** находятся на отдельной полноширинной полосе под шапкой: все видны и доступны для нажатия, при сужении окна переходят на следующие строки **без горизонтальной прокрутки и стрелок**. Вкладки **содержимого внутри Panel** по-прежнему имеют собственную компактную прокрутку.
-- «**+ Экран**» предлагает только **пустой** экран и **копию текущего**. Копия получает новые screen/panel IDs, сохраняя видимое расположение и ссылки на тот же State.
-- В общем Workspace «**+ Контекст**» открывает выбор Context Template, предложенный профилем. `createContext` сначала подготавливает новый State и набор экранов, Shell **целиком проверяет** раскладку через `addScreensFromTemplates`, затем вызывает `commit`; недопустимый набор не сохраняется частично. Shell не копирует предметные данные сам.
-- **«⇄ Композиция»** использует опциональные `WorkspaceProfile.compositionContextIds` и `prepareComparison`. Shell принимает возвращённые профильные шаблоны и проверяет результат **до** `commit()`: готовый режим атомарно создаёт три окна на отдельном экране, ручной требует два уже открытых Architecture на текущем экране и добавляет **только Comparison**. Профиль владеет определением Scope, его применимостью и чтением State; Shell не интерпретирует Architecture.
-- Дескрипторы и `maxPerScreen` ограничивают размещение **конкретного адресованного вида**, а не число предметных объектов. В общем Workspace экземпляры Architecture разных Context имеют разные адреса.
-- Навигация активирует вкладку, при необходимости создаёт окно, прокручивает к нему и подсвечивает. Закрытие окна/вкладки или смена экрана не удаляет Context, State или историю.
-- Горизонтальное колесо вкладок не прокручивает Workspace; нижняя полоса Shell может прокручивать рабочую область; Ctrl+колесо остаётся браузеру. Режим просмотра скрывает служебную шапку окон, не скрывая их предметное содержимое.
+Предметная запись находится в профиле: общий contentStorage.ts используется архитектурой и Markdown. Он не является registry или универсальным ContentStore.
 
-## Сохранность пользовательской раскладки
+[Workspace и ключи](../workspace/README.md) · [Bridge](../workspace/BRIDGE_COMMANDS.md)
 
-Shell **не сохраняет** стартовые/fallback раскладки при первоначальной загрузке. Запись layout происходит только после изменения рабочего экрана; если в старом ключе лежат невалидные байты, прежде чем его заменить, [safeStorage.ts](../../src/shell/safeStorage.ts) архивирует их отдельно по `pt006-recovery-original-v1:<key>`. Если архивирование не удалось, прежнее сохранение не перезаписывается. `validateWorkspace` дополнительно отклоняет неуникальные ID экранов/окон и недопустимую геометрию. Предметные State принадлежат профилям и сохраняются ими по такому же неразрушающему правилу. Подробнее — [Workspace](../workspace/README.md).
+## Шаблоны экранов
 
-## Адресация и навигация
+screenTemplates.ts создаёт размещение из рецептов и проверяет весь набор через действующий workspace validator. Текущий профиль предоставляет четыре рецепта и их bundle; UI и Bridge используют одну createTemplateScreens-команду. Screen Templates не входят в Content metadata/ownership.
 
-Для старого A/B режима поддерживается прежнее событие:
+Shell раскрывает только известные нетронутые прежние стандартные композиции single-architecture. Чтение не пишет storage; первая запись сохраняет исходные bytes через safeStorage. Пользовательские раскладки не заменяются автоматически.
 
-```ts
-{ type: 'open-content', target: { profileId: 'architecture-simulator', instanceId: 'architecturePlan' } }
-```
+[Состав, ключи и поведение](../workspace/README.md)
 
-В **общем Workspace** событие дополнительно содержит идентификатор Context:
+Действующие переходы из видов используют renderContent open-callback и layout openContent command. Callback реально вызывается Events/Current/Requirements/Files/Work; он не является dormant profile event API и не пишет предметные данные.
 
-```ts
-{ type: 'open-content', target: {
-  profileId: 'architecture-simulator',
-  contextId: 'B',
-  instanceId: 'architecturePlan'
-} }
-```
+## Механики и observability
 
-Shell проверяет `profileId`, разрешает адрес через `WorkspaceProfile.resolveContentAddress`, затем находит вкладку **в текущей раскладке**. В неизвестный Context/вид не переходит и не подставляет похожий ID. Само событие не исполняет Evolution Step.
-
-В [contexts.ts](../../src/shell/contexts.ts) определены структурированный `ResourceRef`, `ContextInstance<T>`, `ContextTemplate<T>`, функции `scopedContentId`/`parseScopedContentId`, `scopeDescriptors`, `bindContextScreens`, `bindLegacyLayout`. Строковый ключ `context/<contextId>/<resourceId>` используется только как **внутренний таб-ID Workspace v3**, но не как универсальная идентичность предметных ресурсов.
-
-## Два режима при одном профиле
-
-- **Отдельные A/B раскладки:** прежний `WorkspaceProfile.contextId` переключает всю раскладку; она продолжает храниться в legacy `layout-v3`.
-- **Общий Workspace:** `contextId='workspace'` и отдельный layout key; несколько Context отображаются на одних экранах. Профиль предоставляет адресованные дескрипторы, рендеринг и callback создания Context. Старые layouts и содержимое A/B при этом не перезаписываются.
-- В App доступны **два профиля:** Architecture Simulator (режим отдельных A/B или общий Workspace) и независимый Markdown Fixture. Они поочерёдно подключаются к **одному** `WorkspaceShell`. Shell не импортирует их внутренние State; раскладки хранятся по разным ключам. Общего одновременного Workspace двух профилей пока нет.
-
-**Реализован один профильный Scope Mechanism** для чтения совместимых Architecture Context с явными bindings и отдельным экранным результатом. Shell только размещает окна и вызывает согласованное `commit`. **Реализовано:** проверочное подключение второго Markdown Profile через публичный `WorkspaceProfile` и read-only контракт [resourceProviders.ts](../../src/shell/resourceProviders.ts), который не зависит от `DemoStore`. **Не реализованы:** совместные окна разных профилей в одном Workspace, общий registry Scope/прав записи, динамическая загрузка неизвестных профилей и универсальные view-local настройки. [Детали Scope Comparison](../workspace/README.md) · [Завершённые этапы G-CODE-01–04](../workspace/NEXT_CODE_PLAN_CANDIDATE.md).
-
-**Сброс:** в старом режиме подтверждённый демо-сброс может вызвать профильное `resetContent`; в общем Workspace сбрасывается раскладка, а `resetContent` контекстного профиля **не удаляет** State существующих Context. Не считать эту кнопку универсальной операцией удаления Context.
-
-[Профильный контракт](../profiles/README.md) · [Код Shell](../../src/shell/README.md).
+[MECHANICS](MECHANICS.md) — единое описание core/scope, Definition/Connection/UI binding/Invocation, хранения у шаблонов и ограничений трассировки. Модули src/shell/mechanics содержат общий runtime и Inspector; dev/mechanicsSourcePlugin строит производный source index и UI bindings. Для runtime используется короткая metadata; UI и тексты исходников загружаются по открытию.

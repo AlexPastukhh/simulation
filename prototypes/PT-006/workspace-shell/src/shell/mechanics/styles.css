@@ -1,0 +1,47 @@
+.mechanics-trigger{white-space:nowrap}
+.mechanics-panel-button{color:#a5cce9!important;font-size:14px}
+.mechanics-inspector{position:fixed;right:12px;top:12px;bottom:12px;width:min(600px,calc(100vw - 24px));z-index:1400;display:flex;flex-direction:column;color:#e1e9f2;background:#142131;border:1px solid #536e8b;border-radius:12px;box-shadow:0 16px 65px #0009;font:13px/1.5 system-ui}
+.mechanics-inspector header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #34475e}
+.mechanics-inspector header strong{font-size:18px}
+.mechanics-inspector small{display:block;color:#a6b9ce;overflow-wrap:anywhere;font-size:11px}
+.mechanics-inspector button,.mechanics-inspector select,.mechanics-inspector input{color:#e1e9f2;background:#1c3047;border:1px solid #49617a;border-radius:6px;padding:7px 10px;font:inherit;cursor:pointer}
+.mechanics-inspector input,.mechanics-inspector select{max-width:100%;width:100%;margin:4px 0}
+.mechanics-inspector button:hover,.mechanics-inspector button:focus-visible{background:#2b4764;border-color:#9ac7ef}
+.mechanics-inspector button[aria-pressed=true],.mechanics-inspector .chosen{border-color:#86c9ff;background:#304b69}
+.mechanics-tools{display:flex;align-items:center;gap:8px;padding:8px 14px}
+.mechanics-tools select{width:auto;min-width:130px}
+.mechanics-inspector nav{display:flex;gap:4px;padding:4px 14px 10px;flex-wrap:wrap;border-bottom:1px solid #34475e}
+.mechanics-scroll{overflow:auto;flex:1;padding:0 16px 18px;min-height:0}
+.mechanics-scroll h3{font-size:15px;margin:14px 0 5px}
+.mechanics-scroll h4{margin:15px 0 6px}
+.mechanics-list{display:grid;gap:6px}
+.mechanics-list button,.mechanics-binding{text-align:left;display:block;width:100%;margin:5px 0}
+.mechanics-detail,.mechanics-trace-row{border:1px solid #3b516a;border-radius:8px;margin:12px 0;padding:10px 12px;overflow-wrap:anywhere}
+.mechanics-detail dl{display:grid;grid-template-columns:140px 1fr;gap:6px;margin:10px 0}
+.mechanics-detail dt{color:#9db7d1}
+.mechanics-detail dd{margin:0}
+.mechanics-detail ul{padding-left:20px}
+.mechanics-inspector pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0b1624;border-radius:6px;padding:10px;font:11px/1.6 ui-monospace,monospace}
+.mechanics-source-links{display:flex;gap:5px;flex-wrap:wrap}
+.mechanics-source-links button{font-size:11px;text-align:left;overflow-wrap:anywhere;max-width:100%}
+.mechanics-inspector .mechanics-code{max-height:440px;overflow:auto;white-space:pre;overflow-wrap:normal;padding:10px 0}
+.source-line{display:block;width:max-content;min-width:100%}
+.source-line i{display:inline-block;font-style:normal;min-width:42px;padding:0 8px;text-align:right;color:#7391ac;user-select:none}
+.source-line.selected{background:#284c70}
+.mechanics-warning{border-left:3px solid #e0b472;padding:8px 10px;background:#453821;color:#f2d7a4}
+.mechanics-trace-row[data-trace-outcome=rejected],.mechanics-trace-row[data-trace-outcome=failed]{border-color:#d3917d}
+.mechanics-trace-row[data-trace-outcome=saved]{border-color:#79bba6}
+.mechanics-inspector.is-picking{border-color:#ffc477}
+@media(max-width:600px){.mechanics-detail dl{grid-template-columns:1fr}.mechanics-inspector nav button{font-size:11px;padding:5px}.mechanics-inspector{top:4px;bottom:4px;right:4px;width:calc(100vw - 8px)}}
+
+.view-mode .mechanics-panel-button{display:block!important}
+
+.mechanics-inspector.is-picking{width:min(340px,calc(100vw - 24px));bottom:auto}
+.mechanics-inspector.is-picking .mechanics-scroll,.mechanics-inspector.is-picking nav{display:none}
+
+.mechanics-list{max-height:210px;overflow:auto;padding-right:4px}
+
+.mechanics-link-row{border:1px solid #3b516a;border-radius:8px;padding:9px 11px;margin:8px 0;overflow-wrap:anywhere}
+.mechanics-link-row strong{display:block}
+.mechanics-link-row p{margin:6px 0}
+.mechanics-link-row button{font-size:11px}

@@ -1,19 +1,9 @@
-# src/shell — код универсального Shell
+# Workspace Shell
 
-**CURRENT / G-CODE-04 + recovery hardening, 2026-10-11.** Shell содержит общую UI-компоновку, навигацию, механизм создания Context из предоставленного профилем шаблона и проверку адресов. Он **не** содержит типов `DemoStore`, `Actual Event` или `PlanRevision`.
+Shell управляет размещением окон, вкладок, экранов и групп. Предметные Content Instances принадлежат профилю. Context и сравнение не входят в действующий runtime.
 
-| Файл | Реализованная ответственность |
-|---|---|
-| [workspace.ts](workspace.ts) | Layout v3: Screen/Panel/Tab, generic add/duplicate, проверка экранных рецептов, поиск и переключение вкладок, геометрия |
-| [contexts.ts](contexts.ts) | `ResourceRef`, `ContextTemplate`, `ContextInstance`, copy-by-default `instantiateContext`, контекстные ID вкладок, безопасный импорт legacy layout |
-| [safeStorage.ts](safeStorage.ts) | Неразрушающая запись после изменения; архивирование invalid raw bytes перед заменой по `pt006-recovery-original-v1:<key>` |
-| [contracts.ts](contracts.ts) | `WorkspaceProfile`, `ContentAddress` с необязательным `contextId`, `contextTemplateOptions`, `createContext`, `resolveContentAddress`, опциональные `compositionContextIds` / `prepareComparison` |
-| [WorkspaceShell.tsx](WorkspaceShell.tsx) | Полноширинная полоса Screen под шапкой (все вкладки видны, переносятся на новые строки), окна/вкладки, «+ Экран», «+ Контекст», «⇄ Композиция», атомарное размещение или привязка Comparison |
-| [windowDrag.ts](windowDrag.ts) | Drag/swap/fit с учётом препятствий и размеров |
-| [styles.css](styles.css) | Общий UI |
+[Карта модулей Shell](../../docs/shell/README.md) · [Workspace и хранение](../../docs/workspace/README.md)
 
-В прежнем режиме `open-content` использует `{profileId,instanceId}`. Для общего Workspace адрес может включать `contextId`; только профиль разрешает его во внутренний `context/<contextId>/<resourceId>` ключ вкладки. Нельзя подменять неизвестную цель другим Context. Два экземпляра одного вида в разных Context считаются разными адресованными ресурсами.
+screenTemplates.ts: атомарные рецепты размещения, используемые UI и Bridge; без создания Content. [Поведение и хранение](../../docs/workspace/README.md).
 
-В `App.tsx` активен один из **двух доступных профилей**; подключается либо legacy-представление, либо общий Workspace этого же профиля. Реализована ready/manual композиция **одного профильного read-only Comparison Scope**: Shell размещает окна и подтверждает профильный Scope только после проверки layout. Межпрофильный runtime, **универсальные** Scope Mechanisms и всеобщие view-local persisted selections **не реализованы**.
-
-[Подробное описание Shell](../../docs/shell/README.md) · [Работа с Workspace](../../docs/workspace/README.md) · [Профили](../../docs/profiles/README.md).
+mechanics/ — общий Inspector, bounded session trace, Definition/Connection и привязки источников. [Контракт, владельцы и ограничения](../../docs/shell/MECHANICS.md).

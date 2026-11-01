@@ -1,104 +1,104 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createWorkspaceModel } from '../src/shell/workspace.ts'
-import { CONTENT, INITIAL_WORKSPACE, SCREEN_TEMPLATES, SCREEN_BUNDLES } from '../src/profiles/architecture-simulator/workspace.ts'
+import {createWorkspaceModel} from '../src/shell/workspace.ts'
+import {appendTemplateScreens,matchesWorkspaceLayout} from '../src/shell/screenTemplates.ts'
+import {DESCRIPTORS,MARKDOWN_DESCRIPTOR,SCREEN_TEMPLATES,SCREEN_BUNDLES,INITIAL_WORKSPACE,PREVIOUS_INITIAL_WORKSPACE} from '../src/profiles/single-architecture/workspace.ts'
+import {parseWorkspaceCommand,executeWorkspaceCommand} from '../src/shell/workspaceCommands.ts'
+import {reduceShellState} from '../src/shell/workspaceDispatch.ts'
+import {writePreservingInvalid,RECOVERY_PREFIX} from '../src/shell/safeStorage.ts'
 
-const ops=createWorkspaceModel(CONTENT)
-const seed=()=>structuredClone(INITIAL_WORKSPACE)
-const ids=()=>{let n=0;return kind=>kind+'-generated-'+(++n)}
-const allIds=w=>[...w.screens.map(s=>s.id),...w.screens.flatMap(s=>s.panels.map(p=>p.id))]
-const located=w=>w.screens.map(s=>({title:s.title,panels:s.panels.map(p=>({rect:p.rect,tabs:p.tabs,active:p.active}))}))
-
-test('profile publishes four screen templates once, covering 18 kinds',()=>{
-  assert.equal(SCREEN_TEMPLATES.length,4)
-  assert.equal(SCREEN_BUNDLES.length,1)
-  assert.deepEqual(SCREEN_BUNDLES[0].templateIds,SCREEN_TEMPLATES.map(t=>t.id))
-  assert.deepEqual(SCREEN_TEMPLATES.map(t=>t.title),INITIAL_WORKSPACE.screens.map(s=>s.title))
-  const kinds=SCREEN_TEMPLATES.flatMap(t=>t.panels.flatMap(p=>p.tabs))
-  assert.equal(kinds.length,18)
-  assert.equal(new Set(kinds).size,18)
+const ops=createWorkspaceModel([...DESCRIPTORS,MARKDOWN_DESCRIPTOR])
+const placements=(prefix,templates=SCREEN_TEMPLATES)=>templates.map(t=>({
+ templateId:t.id,screenId:prefix+t.id,panelIds:t.panels.map((_p,i)=>prefix+t.id+'-p'+i),
+}))
+test('four-screen default covers every current view and uses one bundle source',()=>{
+ assert.equal(INITIAL_WORKSPACE.screens.length,4)
+ assert.deepEqual(SCREEN_BUNDLES[0].templateIds,SCREEN_TEMPLATES.map(t=>t.id))
+ assert.deepEqual(INITIAL_WORKSPACE.screens.map(s=>s.title),SCREEN_TEMPLATES.map(t=>t.title))
+ assert.equal(ops.validateWorkspace(INITIAL_WORKSPACE),true)
+ assert.deepEqual(new Set(INITIAL_WORKSPACE.screens.flatMap(s=>s.panels.flatMap(p=>p.tabs))),
+  new Set([...DESCRIPTORS,MARKDOWN_DESCRIPTOR].map(d=>d.id)))
+ assert.ok(INITIAL_WORKSPACE.screens.every(s=>s.panels.every(p=>!ops.undersized(p))))
 })
-
-test('copy duplicates window composition with fresh IDs, without mutating source',()=>{
-  const before=seed(),source=structuredClone(before.screens[0])
-  const next=ops.duplicateScreen(before,'screen-1',ids())
-  assert.ok(next)
-  assert.equal(next.screens.length,before.screens.length+1)
-  assert.equal(next.activeScreenId,next.screens.at(-1).id)
-  assert.equal(next.screens.at(-1).title,source.title+' — копия')
-  assert.deepEqual(next.screens.at(-1).panels.map(({rect,tabs,active})=>({rect,tabs,active})),source.panels.map(({rect,tabs,active})=>({rect,tabs,active})))
-  assert.equal(new Set(allIds(next)).size,allIds(next).length)
-  assert.deepEqual(before.screens[0],source)
-  assert.ok(ops.validateWorkspace(next))
-  const again=ops.duplicateScreen(next,next.activeScreenId,ids())
-  // A generator for an independent operation must still avoid IDs in existing layouts.
-  assert.equal(again,null)
+test('repeat bundle and individual creation preserve existing screens, groups and recipes',()=>{
+ const base=ops.saveScreenGroup(structuredClone(INITIAL_WORKSPACE),'g','Работа',INITIAL_WORKSPACE.screens.slice(0,2).map(s=>s.id))
+ const before=structuredClone(base),recipes=structuredClone(SCREEN_TEMPLATES)
+ const first=appendTemplateScreens(base,SCREEN_TEMPLATES,placements('first-'),ops)
+ const second=appendTemplateScreens(first,SCREEN_TEMPLATES,placements('second-'),ops)
+ const single=appendTemplateScreens(second,SCREEN_TEMPLATES,placements('one-',[SCREEN_TEMPLATES[2]]),ops)
+ assert.equal(single.screens.length,13)
+ assert.deepEqual(single.screens.slice(0,4),base.screens)
+ assert.deepEqual(single.screenGroups,base.screenGroups)
+ assert.deepEqual(base,before);assert.deepEqual(SCREEN_TEMPLATES,recipes)
+ single.screens.at(-1).panels[0].rect.x=999
+ assert.notEqual(SCREEN_TEMPLATES[2].panels[0].rect.x,999)
 })
-
-test('copy can be repeated with globally unique generated IDs',()=>{
-  let n=0
-  const gen=kind=>'generated-'+kind+'-'+(++n)
-  let w=seed()
-  w=ops.duplicateScreen(w,'screen-1',gen)
-  w=ops.duplicateScreen(w,'screen-1',gen)
-  assert.equal(w.screens.length,6)
-  assert.equal(new Set(allIds(w)).size,allIds(w).length)
-  assert.ok(ops.validateWorkspace(w))
+test('bad later template, duplicate global IDs and incomplete windows reject the whole bundle',()=>{
+ const before=structuredClone(INITIAL_WORKSPACE)
+ for(const change of [
+  p=>p[3].templateId='missing',
+  p=>p[3].screenId=p[0].screenId,
+  p=>p[3].panelIds[0]=INITIAL_WORKSPACE.screens[0].panels[0].id,
+  p=>p[3].panelIds.pop(),
+  p=>p[3].screenId=p[1].panelIds[0],
+ ]){
+  const p=placements('bad-');change(p)
+  assert.equal(appendTemplateScreens(INITIAL_WORKSPACE,SCREEN_TEMPLATES,p,ops),null)
+  assert.deepEqual(INITIAL_WORKSPACE,before)
+ }
+ const bad=structuredClone(SCREEN_TEMPLATES);bad[3].panels[0].tabs=['comparison']
+ assert.equal(appendTemplateScreens(INITIAL_WORKSPACE,bad,placements('unknown-'),ops),null)
 })
-
-test('template adds only a new screen, preserving existing screens and active data references',()=>{
-  const w=seed(),original=JSON.stringify(w)
-  const result=ops.addScreensFromTemplates(w,[SCREEN_TEMPLATES[2]],ids())
-  assert.ok(result)
-  assert.equal(result.screens.length,5)
-  assert.equal(JSON.stringify(w),original)
-  assert.equal(result.screens.at(-1).title,'Планирование')
-  assert.deepEqual(result.screens.at(-1).panels.map(({rect,tabs,active})=>({rect,tabs,active})),SCREEN_TEMPLATES[2].panels)
-  assert.ok(ops.validateWorkspace(result))
-  const resolved=ops.openContent(result,'plan','not-used')
-  assert.equal(resolved.created,false)
-  assert.equal(resolved.screenId,result.activeScreenId)
+test('UI/Bridge share template execution, revision conflict and all-or-nothing rejection',()=>{
+ const command=parseWorkspaceCommand({type:'createTemplateScreens',placements:placements('bridge-')})
+ assert.ok(command)
+ assert.equal(parseWorkspaceCommand({type:'createTemplateScreens',placements:[]}),null)
+ assert.equal(parseWorkspaceCommand({type:'createTemplateScreens',placements:[{templateId:'x',screenId:'y',panelIds:['same','same']}]}),null)
+ const state={layouts:{main:INITIAL_WORKSPACE},revision:2,bridgeReply:null}
+ const run=(action)=>reduceShellState(state,action,ops,'main',INITIAL_WORKSPACE,SCREEN_TEMPLATES)
+ const ui=run({type:'command',command})
+ const bridge=run({type:'command',command,requestId:'ok',expectedRevision:2})
+ assert.deepEqual(ui.layouts,bridge.layouts)
+ assert.equal(bridge.bridgeReply.status,'applied')
+ assert.equal(bridge.revision,3)
+ const stale=run({type:'command',command,requestId:'old',expectedRevision:1})
+ assert.deepEqual(stale.layouts,state.layouts);assert.equal(stale.bridgeReply.status,'conflict')
+ const bad={...command,placements:[...command.placements,{templateId:'missing',screenId:'unused',panelIds:[]}]}
+ const rejected=run({type:'command',command:bad,requestId:'bad',expectedRevision:2})
+ assert.deepEqual(rejected.layouts,state.layouts);assert.equal(rejected.bridgeReply.status,'rejected')
+ assert.equal(executeWorkspaceCommand(INITIAL_WORKSPACE,command,ops).ok,false)
 })
-
-test('batch adds all four atomically without disturbing saved layouts of another context',()=>{
-  const a=seed(),b=seed(),beforeA=JSON.stringify(a),beforeB=JSON.stringify(b)
-  const added=ops.addScreensFromTemplates(a,SCREEN_TEMPLATES,ids())
-  assert.ok(added)
-  assert.equal(added.screens.length,8)
-  assert.equal(added.activeScreenId,added.screens[4].id)
-  assert.deepEqual(located(added).slice(4),located(INITIAL_WORKSPACE))
-  assert.equal(new Set(allIds(added)).size,allIds(added).length)
-  assert.equal(JSON.stringify(a),beforeA)
-  assert.equal(JSON.stringify(b),beforeB)
-  assert.ok(ops.validateWorkspace(JSON.parse(JSON.stringify(added))))
+test('only the exact prior default matches; changed geometry, selection and extra screens survive',()=>{
+ const reordered={screens:PREVIOUS_INITIAL_WORKSPACE.screens,activeScreenId:PREVIOUS_INITIAL_WORKSPACE.activeScreenId,version:3}
+ assert.ok(matchesWorkspaceLayout(reordered,PREVIOUS_INITIAL_WORKSPACE))
+ for(const change of [
+  w=>w.screens[0].panels[0].rect.x++,
+  w=>w.screens[0].panels[0].active='history',
+  w=>w.screens.push({id:'custom',title:'Мой экран',panels:[]}),
+  w=>w.screens[0].title='Моё размещение',
+  w=>w.extra=true,
+ ]){
+  const w=structuredClone(PREVIOUS_INITIAL_WORKSPACE);change(w)
+  assert.equal(matchesWorkspaceLayout(w,PREVIOUS_INITIAL_WORKSPACE),false)
+ }
 })
-
-test('bad templates and duplicate generated IDs are rejected without a partial screen',()=>{
-  const before=seed(),original=JSON.stringify(before)
-  const good=SCREEN_TEMPLATES[0]
-  const variants=[
-    {...good,panels:[...good.panels,{rect:{x:0,y:0,w:300,h:300},tabs:['unknown-kind'],active:'unknown-kind'}]},
-    {...good,panels:[{rect:{x:0,y:0,w:100,h:140},tabs:['events'],active:'events'}]},
-    {...good,panels:[{rect:{x:0,y:0,w:400,h:450},tabs:['events','events'],active:'events'}]},
-    {...good,panels:[{rect:{x:0,y:0,w:400,h:450},tabs:['events'],active:'plan'}]},
-    {...good,panels:[{rect:{x:0,y:0,w:400,h:450},tabs:['events'],active:'events'},{rect:{x:420,y:0,w:400,h:450},tabs:['events'],active:'events'}]},
-  ]
-  for(const bad of variants){
-    assert.equal(ops.addScreensFromTemplates(before,[good,bad],ids()),null)
-    assert.equal(JSON.stringify(before),original)
+test('valid predecessor bytes are archived before layout write; archive conflict or failure blocks it',()=>{
+ const key='layout',raw=JSON.stringify(PREVIOUS_INITIAL_WORKSPACE,null,3),next=JSON.stringify(INITIAL_WORKSPACE)
+ const preserve=s=>matchesWorkspaceLayout(JSON.parse(s),PREVIOUS_INITIAL_WORKSPACE)
+ const previous=globalThis.localStorage
+ try{
+  for(const mode of ['success','throw','mismatch']){
+   const data=new Map([[key,raw]])
+   if(mode==='mismatch')data.set(RECOVERY_PREFIX+key,'older backup')
+   globalThis.localStorage={getItem:k=>data.get(k)??null,setItem:(k,v)=>{
+    if(mode==='throw'&&k===RECOVERY_PREFIX+key)throw Error('denied')
+    data.set(k,v)
+   }}
+   const ok=writePreservingInvalid(key,next,()=>true,preserve)
+   assert.equal(ok,mode==='success')
+   assert.equal(data.get(key),mode==='success'?next:raw)
+   if(mode==='success')assert.equal(data.get(RECOVERY_PREFIX+key),raw)
+   if(mode==='mismatch')assert.equal(data.get(RECOVERY_PREFIX+key),'older backup')
   }
-  assert.equal(ops.addScreensFromTemplates(before,[],ids()),null)
-  assert.equal(ops.addScreensFromTemplates(before,[good],()=> 'screen-1'),null)
-  assert.equal(ops.duplicateScreen(before,'missing',ids()),null)
-  assert.equal(ops.duplicateScreen(before,'screen-1',()=> 'panel-1'),null)
-})
-
-test('generic templates work with a non-simulator profile without domain types',()=>{
-  const generic=createWorkspaceModel([{id:'doc.md',label:'doc',caption:'file',icon:'▤',minWidth:200,minHeight:180,maxPerScreen:1,accent:'#ccc'}])
-  const init={version:3,activeScreenId:'one',screens:[{id:'one',title:'Plain',panels:[]}]}
-  const t={id:'read',title:'Read',panels:[{rect:{x:10,y:10,w:320,h:290},tabs:['doc.md'],active:'doc.md'}]}
-  const result=generic.addScreensFromTemplates(init,[t],ids())
-  assert.ok(result)
-  assert.equal(generic.openContent(result,'doc.md','unused').screenId,result.activeScreenId)
-  assert.equal(generic.duplicateScreen(result,result.activeScreenId,()=> 'collision'),null)
+ }finally{globalThis.localStorage=previous}
 })

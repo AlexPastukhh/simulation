@@ -1,24 +1,18 @@
-/** Preserve the exact previous bytes when recovery needs to replace invalid saved data.
+/** Preserve exact previous bytes for invalid data or an explicitly requested layout upgrade.
  * No write takes place during hydration. If archiving fails, the original is left untouched. */
 export const RECOVERY_PREFIX = 'pt006-recovery-original-v1:'
-export function parseStored<T>(key:string,valid:(value:unknown)=>value is T):T|null {
-  try {
-    const raw=localStorage.getItem(key)
-    if(raw===null)return null
-    const value:unknown=JSON.parse(raw)
-    return valid(value)?value:null
-  }catch{return null}
-}
 export function writePreservingInvalid(
   key:string,
   next:string,
   validExistingRaw:(raw:string)=>boolean,
+  preserveExistingRaw?:(raw:string)=>boolean|string,
 ):boolean {
   try {
     const previous=localStorage.getItem(key)
     if(previous===next)return true
-    if(previous!==null&&!validExistingRaw(previous)){
-      const backupKey=RECOVERY_PREFIX+key
+    const preserve=previous!==null?preserveExistingRaw?.(previous):false
+    if(previous!==null&&(!validExistingRaw(previous)||preserve)){
+      const backupKey=typeof preserve==='string'?preserve:RECOVERY_PREFIX+key
       const existingBackup=localStorage.getItem(backupKey)
       if(existingBackup===null){
         localStorage.setItem(backupKey,previous)
@@ -30,7 +24,7 @@ export function writePreservingInvalid(
       }
     }
     localStorage.setItem(key,next)
-    return true
+    return localStorage.getItem(key)===next
   }catch{return false}
 }
 export function validStoredJson<T>(valid:(value:unknown)=>value is T):(raw:string)=>boolean {

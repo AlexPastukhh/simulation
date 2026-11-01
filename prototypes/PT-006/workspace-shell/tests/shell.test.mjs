@@ -2,7 +2,6 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { createWorkspaceModel } from '../src/shell/workspace.ts'
-import { CONTENT, INITIAL_WORKSPACE } from '../src/profiles/architecture-simulator/workspace.ts'
 
 const descriptors = [
   {id:'markdown:README.md',label:'README.md',caption:'Markdown',icon:'▤',minWidth:250,minHeight:220,maxPerScreen:null,accent:'#ccc'},
@@ -57,13 +56,6 @@ test('unknown content cannot create an unregistered tab or window',()=>{
 test('active-screen priority precedes other screen even when duplicate instance exists',()=>{
   const result=ops.openContent(seed(),'markdown:DESIGN.md','new')
   assert.equal(result.screenId,'main')
-})
-test('existing simulator layout remains valid through the generic shell model',()=>{
-  const simulator=createWorkspaceModel(CONTENT)
-  assert.equal(simulator.validateWorkspace(INITIAL_WORKSPACE),true)
-  const plan=simulator.openContent(INITIAL_WORKSPACE,'architecturePlan','unused')
-  assert.equal(plan.created,false)
-  assert.equal(plan.screenId,'screen-3')
 })
 test('generic shell does not import simulator domain types or components',()=>{
   for(const file of ['workspace.ts','WorkspaceShell.tsx','windowDrag.ts','contracts.ts']){
